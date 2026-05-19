@@ -21,7 +21,7 @@ func TestGetUserToken(t *testing.T) {
 				"errCode": 0,
 				"data":    map[string]any{"token": "admin-tok", "expireTimeSeconds": 86400},
 			})
-		case "/auth/user_token":
+		case "/auth/get_user_token":
 			userTokenCalled = true
 			json.NewEncoder(w).Encode(map[string]any{
 				"errCode": 0,

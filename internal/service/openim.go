@@ -95,7 +95,7 @@ func (c *OpenIMClient) GetUserToken(userID string, platformID int) (string, erro
 	if err != nil {
 		return "", err
 	}
-	data, err := c.post("/auth/user_token", map[string]any{
+	data, err := c.post("/auth/get_user_token", map[string]any{
 		"userID": userID, "platformID": platformID,
 	}, tok)
 	if err != nil {
