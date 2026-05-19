@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -33,6 +34,7 @@ func (c *OpenIMClient) post(path string, body any, token string) (json.RawMessag
 	b, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPost, c.cfg.APIURL+path, bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("operationID", strconv.FormatInt(time.Now().UnixNano(), 10))
 	if token != "" {
 		req.Header.Set("token", token)
 	}
