@@ -1,0 +1,44 @@
+# Run AFTER: cd open-im-server && docker compose up -d
+# Then:       cd im-business   && docker compose up -d --build
+
+networks:
+  openim:
+    external: true   # created by open-im-server/docker-compose.yml
+
+services:
+  postgres-business:
+    image: postgres:16-alpine
+    container_name: postgres-business
+    environment:
+      POSTGRES_DB: im_business
+      POSTGRES_USER: im_business
+      POSTGRES_PASSWORD: im_business123
+    volumes:
+      - postgres-business-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U im_business"]
+      interval: 5s
+      retries: 5
+    restart: always
+    networks:
+      - openim
+
+  im-business:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: im-business
+    ports:
+      - "10008:10008"
+    command: ["-config", "config/config.yaml"]
+    volumes:
+      - ./config/docker.config.yaml:/app/config/config.yaml:ro
+    depends_on:
+      postgres-business:
+        condition: service_healthy
+    restart: always
+    networks:
+      - openim
+
+volumes:
+  postgres-business-data:

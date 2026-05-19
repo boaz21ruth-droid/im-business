@@ -1,0 +1,22 @@
+server:
+  port: 10008
+  mode: release
+
+postgres:
+  dsn: "host=postgres-business user=im_business password=im_business123 dbname=im_business port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+
+redis:
+  addr: "redis:6379"       # OpenIM's redis container name in the openim network
+  password: "openIM123"
+  db: 5
+
+jwt:
+  secret: "CHANGE-THIS-IN-PRODUCTION-32CHARS"
+  expire_hours: 168
+
+openim:
+  # After docker compose up, run: docker ps | grep openim
+  # to find the API container name and update this URL if needed.
+  api_url: "http://openim-api:10002"
+  admin_user_id: "imAdmin"
+  secret: "openIM123"
