@@ -1,0 +1,20 @@
+server:
+  port: 10008
+  mode: debug
+
+postgres:
+  dsn: "host=localhost user=im_business password=im_business123 dbname=im_business port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+
+redis:
+  addr: "localhost:16379"   # OpenIM infra exposes Redis on 16379 on host
+  password: "openIM123"
+  db: 5                     # db 0-4 used by OpenIM; use 5 to avoid collision
+
+jwt:
+  secret: "CHANGE-THIS-IN-PRODUCTION-32CHARS"
+  expire_hours: 168         # 7 days
+
+openim:
+  api_url: "http://localhost:10002"   # OpenIM API gateway
+  admin_user_id: "imAdmin"
+  secret: "openIM123"                 # matches open-im-server config/share.yml
