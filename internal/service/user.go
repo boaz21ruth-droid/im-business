@@ -70,8 +70,8 @@ func toUserInfoSlice(users []model.User) []UserInfo {
 	out := make([]UserInfo, len(users))
 	for i, u := range users {
 		out[i] = UserInfo{
-			UserID: u.UserID, Account: u.Account, PhoneNumber: u.PhoneNumber,
-			AreaCode: u.AreaCode, Email: u.Email, Nickname: u.Nickname,
+			UserID: u.UserID, Account: derefStr(u.Account), PhoneNumber: derefStr(u.PhoneNumber),
+			AreaCode: u.AreaCode, Email: derefStr(u.Email), Nickname: u.Nickname,
 			FaceURL: u.FaceURL, Gender: u.Gender, Birth: u.Birth,
 			Level: u.Level, AllowAddFriend: u.AllowAddFriend,
 			AllowBeep: u.AllowBeep, AllowVibration: u.AllowVibration,

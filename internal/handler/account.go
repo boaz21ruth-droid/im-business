@@ -38,8 +38,29 @@ func (h *AccountHandler) SendCode(c *gin.Context) {
 	resp.OK(c, nil)
 }
 
-// VerifyCode is a no-op in MVP; real verification happens inside Register/ResetPassword.
-func (h *AccountHandler) VerifyCode(c *gin.Context) { resp.OK(c, nil) }
+// VerifyCode checks the submitted code without consuming it (consumed in Register/ResetPassword).
+func (h *AccountHandler) VerifyCode(c *gin.Context) {
+	var req struct {
+		AreaCode    string `json:"areaCode"`
+		PhoneNumber string `json:"phoneNumber"`
+		Email       string `json:"email"`
+		VerifyCode  string `json:"verifyCode"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.ErrBadRequest(c, err.Error())
+		return
+	}
+	target := firstNE(req.Email, req.PhoneNumber)
+	if target == "" || req.VerifyCode == "" {
+		resp.ErrBadRequest(c, "email/phone and verifyCode required")
+		return
+	}
+	if err := h.svc.VerifyCode(c.Request.Context(), target, req.VerifyCode); err != nil {
+		resp.Fail(c, http.StatusBadRequest, 1007, err.Error())
+		return
+	}
+	resp.OK(c, nil)
+}
 
 func (h *AccountHandler) Register(c *gin.Context) {
 	var req struct {

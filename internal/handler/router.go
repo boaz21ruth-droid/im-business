@@ -11,6 +11,16 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger(log))
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, token, operationID")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
 
 	auth := middleware.Auth(jwt)
 
@@ -42,6 +52,13 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 		u.POST("/update", user.UpdateUserInfo)
 		u.POST("/find/full", user.FindUsersFullInfo)
 		u.POST("/search/full", user.SearchUsersFullInfo)
+		// RTC token stub — voice/video calls not yet supported
+		u.POST("/rtc/get_token", func(c *gin.Context) {
+			c.JSON(200, gin.H{"errCode": 0, "errMsg": "", "data": gin.H{
+				"token":   "",
+				"liveURL": "",
+			}})
+		})
 	}
 
 	r.POST("/friend/search", auth, user.SearchFriendInfo)

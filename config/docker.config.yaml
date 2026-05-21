@@ -17,6 +17,6 @@ jwt:
 openim:
   # After docker compose up, run: docker ps | grep openim
   # to find the API container name and update this URL if needed.
-  api_url: "http://openim-api:10002"
+  api_url: "http://openim-server:10002"
   admin_user_id: "imAdmin"
   secret: "openIM123"

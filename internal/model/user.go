@@ -5,10 +5,10 @@ import "time"
 type User struct {
 	ID             int64     `gorm:"primaryKey;autoIncrement"`
 	UserID         string    `gorm:"column:user_id;uniqueIndex;size:64;not null"`
-	Account        string    `gorm:"column:account;uniqueIndex;size:64"`
-	PhoneNumber    string    `gorm:"column:phone_number;size:32"`
+	Account        *string   `gorm:"column:account;uniqueIndex;size:64"`
+	PhoneNumber    *string   `gorm:"column:phone_number;uniqueIndex;size:32"`
 	AreaCode       string    `gorm:"column:area_code;size:8"`
-	Email          string    `gorm:"column:email;uniqueIndex;size:128"`
+	Email          *string   `gorm:"column:email;uniqueIndex;size:128"`
 	Password       string    `gorm:"column:password;size:256;not null"` // bcrypt(MD5)
 	Nickname       string    `gorm:"column:nickname;size:64;not null;default:''"`
 	FaceURL        string    `gorm:"column:face_url;size:512;not null;default:''"`

@@ -32,7 +32,8 @@ func (s *Service) Send(ctx context.Context, target string) error {
 	return s.rdb.Set(ctx, key(target), mockCode, ttl).Err()
 }
 
-// Verify checks the submitted code and deletes it on success (one-time use).
+// Verify checks the submitted code without consuming it.
+// Call Consume after all dependent work succeeds to invalidate the code.
 func (s *Service) Verify(ctx context.Context, target, submitted string) error {
 	stored, err := s.rdb.Get(ctx, key(target)).Result()
 	if errors.Is(err, redis.Nil) {
@@ -44,6 +45,10 @@ func (s *Service) Verify(ctx context.Context, target, submitted string) error {
 	if stored != submitted {
 		return errors.New("code mismatch")
 	}
-	s.rdb.Del(ctx, key(target))
 	return nil
+}
+
+// Consume deletes the code after successful use (one-time use).
+func (s *Service) Consume(ctx context.Context, target string) {
+	s.rdb.Del(ctx, key(target))
 }

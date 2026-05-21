@@ -69,6 +69,10 @@ func (s *AccountService) SendCode(ctx context.Context, target string) error {
 	return s.code.Send(ctx, target)
 }
 
+func (s *AccountService) VerifyCode(ctx context.Context, target, submitted string) error {
+	return s.code.Verify(ctx, target, submitted)
+}
+
 func (s *AccountService) Register(ctx context.Context, in RegisterInput) (*LoginResult, error) {
 	target := firstNonEmpty(in.Email, in.PhoneNumber, in.Account)
 	if target == "" {
@@ -103,10 +107,10 @@ func (s *AccountService) Register(ctx context.Context, in RegisterInput) (*Login
 
 	u := &model.User{
 		UserID:      userID,
-		Account:     in.Account,
-		PhoneNumber: in.PhoneNumber,
+		Account:     nullableStr(in.Account),
+		PhoneNumber: nullableStr(in.PhoneNumber),
 		AreaCode:    in.AreaCode,
-		Email:       in.Email,
+		Email:       nullableStr(in.Email),
 		Password:    string(hash),
 		Nickname:    nickname,
 		FaceURL:     in.FaceURL,
@@ -116,6 +120,9 @@ func (s *AccountService) Register(ctx context.Context, in RegisterInput) (*Login
 	if err := s.users.Create(u); err != nil {
 		return nil, fmt.Errorf("create user: %w", err)
 	}
+
+	// All steps succeeded — invalidate the one-time code.
+	s.code.Consume(ctx, target)
 
 	return s.buildResult(userID, in.Platform)
 }
@@ -149,7 +156,11 @@ func (s *AccountService) ResetPassword(ctx context.Context, target, verifyCode, 
 		return errors.New("user not found")
 	}
 	hash, _ := bcrypt.GenerateFromPassword([]byte(newPwd), bcrypt.DefaultCost)
-	return s.users.Update(u.UserID, map[string]any{"password": string(hash), "updated_at": time.Now()})
+	if err := s.users.Update(u.UserID, map[string]any{"password": string(hash), "updated_at": time.Now()}); err != nil {
+		return err
+	}
+	s.code.Consume(ctx, target)
+	return nil
 }
 
 func (s *AccountService) ChangePassword(ctx context.Context, userID, currentPwd, newPwd string) error {
@@ -183,4 +194,18 @@ func firstNonEmpty(vals ...string) string {
 		}
 	}
 	return ""
+}
+
+func nullableStr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

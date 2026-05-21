@@ -2,6 +2,7 @@ package repo
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/web1/im-business/internal/model"
 	"gorm.io/gorm"
@@ -47,8 +48,10 @@ func (r *UserRepo) FindByIDs(userIDs []string) ([]model.User, error) {
 func (r *UserRepo) Search(keyword string, offset, limit int) ([]model.User, error) {
 	var users []model.User
 	like := "%" + keyword + "%"
-	err := r.db.Where("nickname ILIKE ? OR account ILIKE ? OR phone_number LIKE ?", like, like, like).
-		Offset(offset).Limit(limit).Find(&users).Error
+	err := r.db.Where(
+		"nickname ILIKE ? OR account ILIKE ? OR phone_number LIKE ? OR email ILIKE ? OR user_id = ?",
+		like, like, like, like, keyword,
+	).Offset(offset).Limit(limit).Find(&users).Error
 	return users, err
 }
 
@@ -57,9 +60,26 @@ func (r *UserRepo) Update(userID string, fields map[string]any) error {
 }
 
 func (r *UserRepo) ExistsByAccount(account, email, phone string) (bool, error) {
+	var clauses []string
+	var args []any
+	if account != "" {
+		clauses = append(clauses, "account = ?")
+		args = append(args, account)
+	}
+	if email != "" {
+		clauses = append(clauses, "email = ?")
+		args = append(args, email)
+	}
+	if phone != "" {
+		clauses = append(clauses, "phone_number = ?")
+		args = append(args, phone)
+	}
+	if len(clauses) == 0 {
+		return false, nil
+	}
 	var count int64
 	err := r.db.Model(&model.User{}).
-		Where("account = ? OR email = ? OR phone_number = ?", account, email, phone).
+		Where(strings.Join(clauses, " OR "), args...).
 		Count(&count).Error
 	return count > 0, err
 }
