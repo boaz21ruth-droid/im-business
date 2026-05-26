@@ -41,9 +41,7 @@ wallet:
   alchemy:
     endpoints: {}            # per-chain endpoint URLs, e.g. eth: "https://eth-mainnet.g.alchemy.com/v2/KEY"
     api_key: ""              # fallback: single key shared across all chains
-    auth_token: ""           # X-Alchemy-Token for Notify management API (from Alchemy dashboard → Team)
-    webhook_signing_key: ""  # HMAC-SHA256 key returned when webhook is created
-    webhook_url: ""          # public URL of this server, e.g. https://example.com/webhook/alchemy
+    auth_token: ""           # 填此项可同时启用 Alchemy Notify webhook（可选，WSS 已覆盖实时推送）
   ankr:
     api_key: "f47ad3eef05038d0218ef3527216f498d50b115ab7eae46da3c9e8c344b8356d"
   covalent:
