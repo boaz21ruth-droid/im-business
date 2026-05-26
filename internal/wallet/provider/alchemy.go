@@ -16,6 +16,7 @@ import (
 
 var alchemyNetworks = map[string]string{
 	"eth":         "eth-mainnet",
+	"bsc":         "bnb-mainnet",
 	"polygon":     "polygon-mainnet",
 	"arbitrum":    "arb-mainnet",
 	"optimism":    "opt-mainnet",
