@@ -101,15 +101,18 @@ func (p *QuickNodeStreamProvider) EnsureStream(ctx context.Context, chainKey str
 
 	filterFn := generateQNFilterFunction(nil)
 	body, _ := json.Marshal(map[string]any{
-		"name":    "im-wallet-" + chainKey,
-		"network": network,
-		"dataset": "receipts",
+		"name":     "im-wallet-" + chainKey,
+		"network":  network,
+		"dataset":  "logs",
 		"isActive": true,
+		// Infrastructure-level filter: only ERC20 Transfer events reach our function.
+		"filters": []map[string]any{
+			{"type": "log_sig", "value": "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"},
+		},
 		"destinations": []map[string]any{
 			{
 				"type": "webhook",
 				"name": "im-wallet-wh-" + chainKey,
-				"filters": []any{},
 				"payload": map[string]any{
 					"type": "filter_function",
 					"fields": map[string]any{
@@ -196,16 +199,19 @@ func (p *QuickNodeStreamProvider) VerifyWebhook(r *http.Request, body []byte) bo
 	return r.Header.Get("x-qn-secret") == p.webhookSecret
 }
 
+// quicknodeStreamPayload is the outer envelope QuickNode Streams sends to the webhook.
+// The Data array contains objects returned by our filter function (one entry per
+// matched ERC20 Transfer log).
 type quicknodeStreamPayload struct {
 	StreamID string `json:"streamId"`
 	Network  string `json:"network"`
 	Data     []struct {
-		TxHash         string `json:"txHash"`
-		From           string `json:"from"`
-		To             string `json:"to"`
-		Value          string `json:"value"`
-		TokenAddress   string `json:"tokenAddress"`
-		BlockTimestamp int64  `json:"blockTimestamp"`
+		TxHash       string `json:"txHash"`
+		From         string `json:"from"`
+		To           string `json:"to"`
+		Value        string `json:"value"`
+		TokenAddress string `json:"tokenAddress"`
+		BlockNumber  int64  `json:"blockNumber"`
 	} `json:"data"`
 }
 
@@ -230,32 +236,25 @@ func (p *QuickNodeStreamProvider) ParseWebhookPayload(body []byte) (chainKey str
 }
 
 // generateQNFilterFunction returns a JavaScript filter function for QuickNode Streams
-// that emits ERC20 Transfer events involving any of the given addresses.
+// using the Logs dataset. Each item in data.streamData is already a single log entry;
+// the infrastructure-level topic0 filter ensures only ERC20 Transfer events arrive.
 func generateQNFilterFunction(addresses []string) string {
 	addrsJSON, _ := json.Marshal(addresses)
 	return fmt.Sprintf(`function main(data) {
-    const ERC20_TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
     const ADDRS = new Set(%s);
     const results = [];
-    for (const block of (data.streamData || [])) {
-        const bnum = parseInt(block.number, 16);
-        const bts = parseInt(block.timestamp, 16);
-        for (const tx of (block.receipts || [])) {
-            for (const log of (tx.logs || [])) {
-                if (log.topics[0] !== ERC20_TRANSFER || log.topics.length < 3) continue;
-                const from = '0x' + log.topics[1].slice(26).toLowerCase();
-                const to   = '0x' + log.topics[2].slice(26).toLowerCase();
-                if (!ADDRS.has(from) && !ADDRS.has(to)) continue;
-                results.push({
-                    txHash: tx.transactionHash,
-                    from: from, to: to,
-                    value: BigInt('0x' + log.data.slice(2)).toString(10),
-                    tokenAddress: log.address.toLowerCase(),
-                    blockNumber: bnum,
-                    blockTimestamp: bts
-                });
-            }
-        }
+    for (const log of (data.streamData || [])) {
+        if (!log.topics || log.topics.length < 3) continue;
+        const from = '0x' + log.topics[1].slice(26).toLowerCase();
+        const to   = '0x' + log.topics[2].slice(26).toLowerCase();
+        if (!ADDRS.has(from) && !ADDRS.has(to)) continue;
+        results.push({
+            txHash: log.transactionHash,
+            from: from, to: to,
+            value: BigInt('0x' + log.data.slice(2)).toString(10),
+            tokenAddress: log.address.toLowerCase(),
+            blockNumber: parseInt(log.blockNumber, 16)
+        });
     }
     return results;
 }`, string(addrsJSON))
