@@ -23,7 +23,7 @@ openim:
 
 wallet:
   stream_provider: moralis
-  disabled_providers: []
+  disabled_providers: []   # 填入要关闭的节点名，如: [ankr, covalent]
   tx_providers:
     eth:         [alchemy, nodereal, infura, ankr, getblock, quicknode, chainstack, covalent, moralis]
     bsc:         [nodereal, ankr, getblock, quicknode, chainstack, covalent, moralis]
@@ -37,25 +37,25 @@ wallet:
   moralis:
     api_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjE0NzBiOGNiLTdiYjktNDI4NS1iNDAyLTdiZDFkMzg2NWI2ZSIsIm9yZ0lkIjoiNTE3MzU5IiwidXNlcklkIjoiNTMyNDI3IiwidHlwZUlkIjoiZGZmNDZmZjItODc3Ni00ZmE4LTljMTEtNmRjODAyNGRkN2JlIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3Nzk2OTg1NjYsImV4cCI6NDkzNTQ1ODU2Nn0.ftOUg_D9FRW_rrg9I9_lScs64bQFxtwEifRpr4RQ1xo"
     webhook_secret: ""
-    webhook_url: ""          # public URL of this server, e.g. https://example.com/webhook/moralis
+    webhook_url: ""   # 部署后填公网地址，如: https://example.com/webhook/moralis
   alchemy:
-    endpoints: {}            # per-chain endpoint URLs, e.g. eth: "https://eth-mainnet.g.alchemy.com/v2/KEY"
-    api_key: ""              # fallback: single key shared across all chains
+    endpoints: {}            # 只在不同链用不同 key 时填写；同一个 key 留空即可
+    api_key: "9ANiAr0O2aI8oLc1LtAk9"  # 所有链共用同一个 key，代码自动拼接 URL
     auth_token: ""           # 填此项可同时启用 Alchemy Notify webhook（可选，WSS 已覆盖实时推送）
   ankr:
     api_key: "f47ad3eef05038d0218ef3527216f498d50b115ab7eae46da3c9e8c344b8356d"
   covalent:
     api_key: "cqt_rQj89W8DymjbWmHwHdwP34hcQQ3H"
   nodereal:
-    api_key: ""
+    api_key: "ac966561cbc4464eb922cc5a3a0c28ab"
   infura:
-    api_key: ""
+    api_key: "BLspzt6FEmhfgR3VUVImeCP-sJ9mhNIJBzv6smVNL7nBiU5QdXq71HjKGa1JKb4JPIoxq_XdboqF-qkv-JTYbh4"
   quicknode:
-    endpoints: {}       # per-chain endpoint URLs for tx history (qn_getWalletTokenTransactions)
+    endpoints: {eth: "https://light-evocative-pond.ethereum-mainnet.quiknode.pro/9bb2ef95f732b35410f4f40bb23ccf690ee56048"}
     api_key: ""         # x-api-key for QuickNode Streams management API
-    webhook_secret: ""  # x-qn-secret header value (you choose; must match stream creation)
-    webhook_url: ""     # public URL of this server, e.g. https://example.com/webhook/quicknode
+    webhook_secret: "qnsec_MjY3NzkxZWYtMzlmZC00Yjk3LTgyOTktZjVkNWRjYTc0Y2Iy"
+    webhook_url: ""   # 部署后填公网地址，如: https://example.com/webhook/quicknode
   getblock:
-    api_key: ""
+    api_key: "https://go.getblock.asia/32249816dea6463c902734b083cea98d"
   chainstack:
-    endpoints: {}
+    endpoints: {bsc: "https://bsc-mainnet.core.chainstack.com/07ceef5ad93e150ec2594de0be3b034c"}

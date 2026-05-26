@@ -45,15 +45,15 @@ wallet:
   covalent:
     api_key: "cqt_rQj89W8DymjbWmHwHdwP34hcQQ3H"
   nodereal:
-    api_key: ""
+    api_key: "ac966561cbc4464eb922cc5a3a0c28ab"
   infura:
-    api_key: ""
+    api_key: "BLspzt6FEmhfgR3VUVImeCP-sJ9mhNIJBzv6smVNL7nBiU5QdXq71HjKGa1JKb4JPIoxq_XdboqF-qkv-JTYbh4"
   quicknode:
     endpoints: {eth: "https://light-evocative-pond.ethereum-mainnet.quiknode.pro/9bb2ef95f732b35410f4f40bb23ccf690ee56048"}   # per-chain endpoint URLs for tx history (qn_getWalletTokenTransactions)
     api_key: ""         # x-api-key for QuickNode Streams management API
     webhook_secret: "qnsec_MjY3NzkxZWYtMzlmZC00Yjk3LTgyOTktZjVkNWRjYTc0Y2Iy"  # x-qn-secret header value (you choose; must match stream creation)
     webhook_url: "http://localhost:10008/webhook/quicknode"
   getblock:
-    api_key: ""
+    api_key: "https://go.getblock.asia/32249816dea6463c902734b083cea98d"
   chainstack:
-    endpoints: {}   # e.g. eth: "https://nd-xxx.p2pify.com/KEY"
+    endpoints: {bsc: "https://bsc-mainnet.core.chainstack.com/07ceef5ad93e150ec2594de0be3b034c"}   # e.g. eth: "https://nd-xxx.p2pify.com/KEY"
