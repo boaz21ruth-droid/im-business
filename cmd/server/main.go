@@ -64,8 +64,9 @@ func main() {
 	tronProv := provider.NewTronGridProvider()
 	multiProviders := wallet.BuildProviders(cfg.Wallet, log)
 	streamProviders := wallet.BuildStreamProviders(cfg.Wallet, log)
+	wsProviders := wallet.BuildWSProviders(cfg.Wallet, log)
 	tronPoller := wallet.NewTronPoller(walletRepo, walletCache, openimCli, tronProv, log)
-	walletSvc := wallet.NewWalletService(walletRepo, walletCache, openimCli, streamProviders, multiProviders, tronPoller, log)
+	walletSvc := wallet.NewWalletService(walletRepo, walletCache, openimCli, streamProviders, wsProviders, multiProviders, tronPoller, log)
 
 	streamProvidersMap := make(map[string]provider.StreamProvider, len(streamProviders))
 	for _, sp := range streamProviders {
@@ -76,6 +77,7 @@ func main() {
 	defer stop()
 
 	go tronPoller.Start(ctx)
+	go walletSvc.StartWSProviders(ctx)
 
 	r := handler.NewRouter(log, jwtSvc,
 		handler.NewAccountHandler(accountSvc),

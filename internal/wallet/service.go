@@ -52,6 +52,7 @@ type WalletService struct {
 	cache           *WalletCache
 	openim          *service.OpenIMClient
 	streamProviders []provider.StreamProvider
+	wsProviders     []provider.WSProvider
 	providers       map[string]*provider.MultiProvider // chain → provider chain
 	tronPoller      *TronPoller
 	log             *zap.Logger
@@ -62,13 +63,15 @@ func NewWalletService(
 	cache *WalletCache,
 	openim *service.OpenIMClient,
 	streamProviders []provider.StreamProvider,
+	wsProviders []provider.WSProvider,
 	providers map[string]*provider.MultiProvider,
 	tronPoller *TronPoller,
 	log *zap.Logger,
 ) *WalletService {
 	return &WalletService{
 		repo: repo, cache: cache, openim: openim,
-		streamProviders: streamProviders, providers: providers, tronPoller: tronPoller, log: log,
+		streamProviders: streamProviders, wsProviders: wsProviders,
+		providers: providers, tronPoller: tronPoller, log: log,
 	}
 }
 
@@ -93,6 +96,9 @@ func (s *WalletService) RegisterAddresses(ctx context.Context, userID string, ad
 		if evmChains[chainKey] {
 			for _, sp := range s.streamProviders {
 				go s.registerStreamAddressWithRetry(sp, chainKey, address)
+			}
+			for _, wp := range s.wsProviders {
+				wp.AddAddress(chainKey, address)
 			}
 		}
 
@@ -383,6 +389,27 @@ func BuildStreamProviders(cfg config.WalletConfig, log *zap.Logger) []provider.S
 	}
 
 	return result
+}
+
+// BuildWSProviders constructs outbound WebSocket stream providers from config.
+func BuildWSProviders(cfg config.WalletConfig, log *zap.Logger) []provider.WSProvider {
+	var result []provider.WSProvider
+
+	if len(cfg.Alchemy.MainKeys()) > 0 {
+		result = append(result, provider.NewAlchemyWSProvider(cfg.Alchemy.MainKeys(), cfg.Alchemy.Endpoints, log))
+		log.Info("ws provider enabled", zap.String("name", "alchemy_ws"))
+	}
+
+	return result
+}
+
+// StartWSProviders starts all WSProvider goroutines and returns when ctx is done.
+func (s *WalletService) StartWSProviders(ctx context.Context) {
+	for _, wp := range s.wsProviders {
+		go wp.Start(ctx, func(chainKey string, t provider.WebhookTransfer) {
+			s.ProcessWebhookTransfer(context.Background(), chainKey, t)
+		})
+	}
 }
 
 // BuildProviders constructs per-chain MultiProvider from config.

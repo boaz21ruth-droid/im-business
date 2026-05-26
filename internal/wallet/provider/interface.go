@@ -65,3 +65,14 @@ type BulkStreamProvider interface {
 	StreamProvider
 	SetStreamAddresses(ctx context.Context, streamID string, addresses []string) error
 }
+
+// WSProvider subscribes to on-chain events via a persistent outbound WebSocket connection.
+// Unlike StreamProvider (inbound webhooks), the provider dials the RPC node directly —
+// no public URL or webhook registration required.
+type WSProvider interface {
+	Name() string
+	// AddAddress registers an address to watch; safe to call concurrently.
+	AddAddress(chainKey, address string)
+	// Start blocks and reconnects on disconnect; run as a goroutine.
+	Start(ctx context.Context, onTransfer func(chainKey string, t WebhookTransfer))
+}
