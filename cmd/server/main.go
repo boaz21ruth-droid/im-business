@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -18,6 +17,8 @@ import (
 	"github.com/web1/im-business/internal/handler"
 	"github.com/web1/im-business/internal/repo"
 	"github.com/web1/im-business/internal/service"
+	"github.com/web1/im-business/internal/wallet"
+	"github.com/web1/im-business/internal/wallet/provider"
 	codepkg "github.com/web1/im-business/pkg/code"
 	jwtpkg "github.com/web1/im-business/pkg/jwt"
 )
@@ -57,7 +58,31 @@ func main() {
 	}
 	userSvc := service.NewUserService(userRepo)
 
-	r := handler.NewRouter(log, jwtSvc, handler.NewAccountHandler(accountSvc), handler.NewUserHandler(userSvc))
+	// Wallet components
+	walletRepo := repo.NewWalletRepo(gdb)
+	walletCache := wallet.NewCache(rdb)
+	tronProv := provider.NewTronGridProvider()
+	multiProviders := wallet.BuildProviders(cfg.Wallet, log)
+	streamProviders := wallet.BuildStreamProviders(cfg.Wallet, log)
+	tronPoller := wallet.NewTronPoller(walletRepo, walletCache, openimCli, tronProv, log)
+	walletSvc := wallet.NewWalletService(walletRepo, walletCache, openimCli, streamProviders, multiProviders, tronPoller, log)
+
+	streamProvidersMap := make(map[string]provider.StreamProvider, len(streamProviders))
+	for _, sp := range streamProviders {
+		streamProvidersMap[sp.Name()] = sp
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go tronPoller.Start(ctx)
+
+	r := handler.NewRouter(log, jwtSvc,
+		handler.NewAccountHandler(accountSvc),
+		handler.NewUserHandler(userSvc),
+		handler.NewWalletHandler(walletSvc),
+		handler.NewWebhookHandler(walletSvc, streamProvidersMap),
+	)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
@@ -74,12 +99,10 @@ func main() {
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	<-ctx.Done()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	srv.Shutdown(ctx)
+	srv.Shutdown(shutCtx)
 	log.Info("server stopped")
 }

@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *UserHandler) *gin.Engine {
+func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *UserHandler, wal *WalletHandler, wh *WebhookHandler) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger(log))
@@ -62,6 +62,14 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 	}
 
 	r.POST("/friend/search", auth, user.SearchFriendInfo)
+
+	w := r.Group("/wallet", auth)
+	{
+		w.POST("/addresses", wal.RegisterAddresses)
+		w.GET("/tx-history", wal.GetTxHistory)
+	}
+
+	r.POST("/webhook/:provider", wh.HandleWebhook)
 
 	return r
 }

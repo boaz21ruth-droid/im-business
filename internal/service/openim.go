@@ -89,6 +89,34 @@ func (c *OpenIMClient) RegisterUser(userID, nickname, faceURL string) error {
 	return err
 }
 
+// WalletTxNotification is the payload for contentType 1400 custom messages.
+type WalletTxNotification struct {
+	Type      string `json:"type"`
+	Chain     string `json:"chain"`
+	Symbol    string `json:"symbol"`
+	Amount    string `json:"amount"`
+	Direction string `json:"direction"` // "sent" | "received"
+	Hash      string `json:"hash"`
+}
+
+// SendWalletTxNotify delivers a wallet transaction notification to a user via OpenIM.
+func (c *OpenIMClient) SendWalletTxNotify(userID string, n WalletTxNotification) error {
+	content, _ := json.Marshal(n)
+	tok, err := c.adminTok()
+	if err != nil {
+		return err
+	}
+	_, err = c.post("/msg/send_msg", map[string]any{
+		"sendID":         c.cfg.AdminUserID,
+		"recvID":         userID,
+		"senderNickname": "Wallet",
+		"content":        map[string]any{"content": string(content)},
+		"contentType":    1400,
+		"sessionType":    1,
+	}, tok)
+	return err
+}
+
 // GetUserToken returns an IM token for an existing OpenIM user.
 func (c *OpenIMClient) GetUserToken(userID string, platformID int) (string, error) {
 	tok, err := c.adminTok()

@@ -18,3 +18,26 @@ openim:
   api_url: "http://localhost:10002"   # OpenIM API gateway
   admin_user_id: "imAdmin"
   secret: "YOUR_OPENIM_SECRET"         # matches open-im-server config/share.yml
+
+wallet:
+  stream_provider: moralis
+  tx_providers:
+    eth:         [alchemy, ankr, covalent, moralis]
+    bsc:         [ankr, covalent, moralis]
+    polygon:     [alchemy, ankr, covalent, moralis]
+    arbitrum:    [alchemy, ankr, covalent, moralis]
+    optimism:    [alchemy, ankr, covalent, moralis]
+    bsc_testnet: [ankr, moralis]
+    eth_sepolia: [alchemy, moralis]
+    tron:        [trongrid]
+    tron_shasta: [trongrid]
+  moralis:
+    api_key: "YOUR_MORALIS_API_KEY"
+    webhook_secret: "YOUR_MORALIS_WEBHOOK_SECRET"
+    webhook_url: "https://your-server.com/webhook/moralis"
+  alchemy:
+    api_key: "YOUR_ALCHEMY_API_KEY"
+  ankr:
+    api_key: ""         # optional; works without key, higher quota with key
+  covalent:
+    api_key: "YOUR_COVALENT_API_KEY"
