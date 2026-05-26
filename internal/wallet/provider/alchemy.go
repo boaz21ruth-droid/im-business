@@ -23,36 +23,43 @@ var alchemyNetworks = map[string]string{
 }
 
 type AlchemyProvider struct {
-	mainPool *keyPool
-	testPool *keyPool
-	client   *http.Client
+	mainPool  *keyPool
+	testPool  *keyPool
+	endpoints map[string]string // per-chain endpoint URLs (takes precedence over api_key)
+	client    *http.Client
 }
 
-func NewAlchemyProvider(mainKeys, testKeys []string) *AlchemyProvider {
+func NewAlchemyProvider(mainKeys, testKeys []string, endpoints map[string]string) *AlchemyProvider {
 	m := newKeyPool(mainKeys)
 	t := m
 	if len(testKeys) > 0 {
 		t = newKeyPool(testKeys)
 	}
-	return &AlchemyProvider{mainPool: m, testPool: t, client: &http.Client{Timeout: 15 * time.Second}}
+	return &AlchemyProvider{mainPool: m, testPool: t, endpoints: endpoints, client: &http.Client{Timeout: 15 * time.Second}}
 }
 
 func (p *AlchemyProvider) Name() string { return "alchemy" }
 
 func (p *AlchemyProvider) GetTransfers(ctx context.Context, req TransferRequest) ([]TxRecord, error) {
-	network, ok := alchemyNetworks[req.Chain]
-	if !ok {
-		return nil, fmt.Errorf("alchemy %w: %s", ErrUnsupportedChain, req.Chain)
+	// Per-chain endpoint URL takes precedence over the shared api_key approach.
+	var url string
+	if ep := p.endpoints[req.Chain]; ep != "" {
+		url = ep
+	} else {
+		network, ok := alchemyNetworks[req.Chain]
+		if !ok {
+			return nil, fmt.Errorf("alchemy %w: %s", ErrUnsupportedChain, req.Chain)
+		}
+		pool := p.mainPool
+		if isTestnet[req.Chain] {
+			pool = p.testPool
+		}
+		key := pool.pick()
+		if key == "" {
+			return nil, fmt.Errorf("alchemy %w: not configured for chain %s", ErrUnsupportedChain, req.Chain)
+		}
+		url = fmt.Sprintf("https://%s.g.alchemy.com/v2/%s", network, key)
 	}
-	pool := p.mainPool
-	if isTestnet[req.Chain] {
-		pool = p.testPool
-	}
-	key := pool.pick()
-	if key == "" {
-		return nil, fmt.Errorf("alchemy %w: api_key not configured", ErrUnsupportedChain)
-	}
-	url := fmt.Sprintf("https://%s.g.alchemy.com/v2/%s", network, key)
 
 	base := map[string]any{
 		"fromBlock":    "0x0",

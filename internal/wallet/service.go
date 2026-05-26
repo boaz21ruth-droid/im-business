@@ -393,7 +393,7 @@ func BuildProviders(cfg config.WalletConfig, log *zap.Logger) map[string]*provid
 	}
 
 	allProviders := map[string]provider.TxProvider{
-		"alchemy":    provider.NewAlchemyProvider(cfg.Alchemy.MainKeys(), cfg.Alchemy.TestKeys()),
+		"alchemy":    provider.NewAlchemyProvider(cfg.Alchemy.MainKeys(), cfg.Alchemy.TestKeys(), cfg.Alchemy.Endpoints),
 		"ankr":       provider.NewAnkrProvider(cfg.Ankr.MainKeys(), cfg.Ankr.TestKeys()),
 		"moralis":    provider.NewMoralisProvider(cfg.Moralis.APIKey, cfg.Moralis.WebhookSecret, cfg.Moralis.WebhookURL),
 		"covalent":   provider.NewCovalentProvider(cfg.Covalent.MainKeys(), cfg.Covalent.TestKeys()),

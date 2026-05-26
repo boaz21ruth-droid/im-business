@@ -37,7 +37,13 @@ wallet:
     webhook_secret: ""
     webhook_url: "http://localhost:10008/webhook/moralis"
   alchemy:
-    api_key: "9ANiAr0O2aI8oLc1LtAk9"
+    endpoints:               # per-chain endpoint URLs (Alchemy App → Networks → HTTPS endpoint)
+      eth: "https://eth-mainnet.g.alchemy.com/v2/9ANiAr0O2aI8oLc1LtAk9"
+      # polygon:  "https://polygon-mainnet.g.alchemy.com/v2/KEY"
+      # arbitrum: "https://arb-mainnet.g.alchemy.com/v2/KEY"
+      # optimism: "https://opt-mainnet.g.alchemy.com/v2/KEY"
+      # eth_sepolia: "https://eth-sepolia.g.alchemy.com/v2/KEY"
+    api_key: ""              # fallback: single key shared across all chains
     auth_token: ""           # X-Alchemy-Token for Notify management API (from Alchemy dashboard → Team)
     webhook_signing_key: ""  # HMAC-SHA256 key returned when webhook is created
     webhook_url: "http://localhost:10008/webhook/alchemy"
@@ -52,7 +58,7 @@ wallet:
   quicknode:
     endpoints: {eth: "https://light-evocative-pond.ethereum-mainnet.quiknode.pro/9bb2ef95f732b35410f4f40bb23ccf690ee56048"}   # per-chain endpoint URLs for tx history (qn_getWalletTokenTransactions)
     api_key: ""         # x-api-key for QuickNode Streams management API
-    webhook_secret: ""  # x-qn-secret header value (you choose; must match stream creation)
+    webhook_secret: "qnsec_MjY3NzkxZWYtMzlmZC00Yjk3LTgyOTktZjVkNWRjYTc0Y2Iy"  # x-qn-secret header value (you choose; must match stream creation)
     webhook_url: "http://localhost:10008/webhook/quicknode"
   getblock:
     api_key: ""

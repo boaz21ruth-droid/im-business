@@ -62,13 +62,17 @@ type WalletConfig struct {
 }
 
 // AlchemyConfig holds both tx-history keys and Notify (stream) credentials.
+// Endpoints takes precedence over api_key for tx-history: set per-chain endpoint URLs
+// when each Alchemy App is bound to a single network (the common case).
+// api_key / api_keys are the fallback for a shared key that covers all networks.
 type AlchemyConfig struct {
-	APIKey            string   `mapstructure:"api_key"`
-	APIKeys           []string `mapstructure:"api_keys"`
-	TestnetAPIKeys    []string `mapstructure:"testnet_api_keys"`
-	AuthToken         string   `mapstructure:"auth_token"`          // X-Alchemy-Token for Notify management API
-	WebhookSigningKey string   `mapstructure:"webhook_signing_key"` // HMAC-SHA256 key for webhook verification
-	WebhookURL        string   `mapstructure:"webhook_url"`
+	Endpoints         map[string]string `mapstructure:"endpoints"`           // per-chain full endpoint URLs
+	APIKey            string            `mapstructure:"api_key"`             // fallback single key
+	APIKeys           []string          `mapstructure:"api_keys"`            // fallback rotating keys
+	TestnetAPIKeys    []string          `mapstructure:"testnet_api_keys"`
+	AuthToken         string            `mapstructure:"auth_token"`          // X-Alchemy-Token for Notify management API
+	WebhookSigningKey string            `mapstructure:"webhook_signing_key"` // HMAC-SHA256 key for webhook verification
+	WebhookURL        string            `mapstructure:"webhook_url"`
 }
 
 func (c AlchemyConfig) MainKeys() []string {
