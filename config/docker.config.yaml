@@ -14,12 +14,24 @@ jwt:
   secret: "CHANGE-THIS-IN-PRODUCTION-32CHARS"
   expire_hours: 168
 
+totp:
+  # AES-256 key (32 bytes / 64 hex chars) used to encrypt the per-user TOTP secret at rest.
+  # Generate one with: openssl rand -hex 32
+  encrypt_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
 openim:
   # After docker compose up, run: docker ps | grep openim
   # to find the API container name and update this URL if needed.
   api_url: "http://openim-server:10002"
   admin_user_id: "imAdmin"
   secret: "openIM123"
+
+smtp:
+  host: smtp.gmail.com
+  port: 465
+  username: boazbin92@gmail.com
+  password: "zljsujsidbrfokim"
+  from: boazbin92@gmail.com
 
 wallet:
   stream_provider: moralis

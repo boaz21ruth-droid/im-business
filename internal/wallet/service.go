@@ -35,16 +35,16 @@ var tronChains = map[string]bool{
 
 // TxResponse is the API response record returned to Flutter.
 type TxResponse struct {
-	Hash          string `json:"hash"`
-	From          string `json:"from"`
-	To            string `json:"to"`
-	Value         string `json:"value"`
-	Decimals      int    `json:"decimals"`
-	TokenSymbol   string `json:"tokenSymbol,omitempty"`
-	TokenContract string `json:"tokenContract,omitempty"`
+	Hash           string `json:"hash"`
+	From           string `json:"from"`
+	To             string `json:"to"`
+	Value          string `json:"value"`
+	Decimals       int    `json:"decimals"`
+	TokenSymbol    string `json:"tokenSymbol,omitempty"`
+	TokenContract  string `json:"tokenContract,omitempty"`
 	BlockTimestamp string `json:"blockTimestamp"`
-	ChainKey      string `json:"chainKey"`
-	Direction     string `json:"direction"` // "sent" | "received"
+	ChainKey       string `json:"chainKey"`
+	Direction      string `json:"direction"` // "sent" | "received"
 }
 
 type WalletService struct {
@@ -107,6 +107,18 @@ func (s *WalletService) RegisterAddresses(ctx context.Context, userID string, ad
 		}
 	}
 	return nil
+}
+
+func (s *WalletService) GetRegisteredAddresses(ctx context.Context, userID string) (map[string]string, error) {
+	rows, err := s.repo.GetAddressesByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	addresses := make(map[string]string, len(rows))
+	for _, row := range rows {
+		addresses[row.ChainKey] = row.Address
+	}
+	return addresses, nil
 }
 
 func (s *WalletService) registerStreamAddressWithRetry(sp provider.StreamProvider, chainKey, address string) {
@@ -315,14 +327,14 @@ func toResponses(records []provider.TxRecord, userAddress string) []TxResponse {
 			direction = "sent"
 		}
 		tr := TxResponse{
-			Hash:          r.Hash,
-			From:          r.From,
-			To:            r.To,
-			Value:         r.Value,
-			Decimals:      r.Decimals,
+			Hash:           r.Hash,
+			From:           r.From,
+			To:             r.To,
+			Value:          r.Value,
+			Decimals:       r.Decimals,
 			BlockTimestamp: r.BlockTimestamp.UTC().Format("2006-01-02T15:04:05Z"),
-			ChainKey:      r.ChainKey,
-			Direction:     direction,
+			ChainKey:       r.ChainKey,
+			Direction:      direction,
 		}
 		if r.TokenSymbol != nil {
 			tr.TokenSymbol = *r.TokenSymbol
@@ -450,4 +462,3 @@ func BuildProviders(cfg config.WalletConfig, log *zap.Logger) map[string]*provid
 	}
 	return result
 }
-

@@ -19,6 +19,8 @@ type User struct {
 	AllowBeep      int8      `gorm:"column:allow_beep;not null;default:1"`
 	AllowVibration int8      `gorm:"column:allow_vibration;not null;default:1"`
 	Status         int8      `gorm:"column:status;not null;default:1"` // 1=normal 2=banned
+	TotpSecret     string    `gorm:"column:totp_secret;size:256;not null;default:''"`
+	TotpEnabled    bool      `gorm:"column:totp_enabled;not null;default:false"`
 	CreatedAt      time.Time `gorm:"autoCreateTime"`
 	UpdatedAt      time.Time `gorm:"autoUpdateTime"`
 }

@@ -32,3 +32,32 @@ func ErrUnauthorized(c *gin.Context) {
 func ErrInternal(c *gin.Context, msg string) {
 	Fail(c, http.StatusInternalServerError, 1002, msg)
 }
+
+// TOTP-related error codes (1600–1604).
+const (
+	CodeTotpInvalid       = 1600
+	CodeTotpLocked        = 1601
+	CodeTotpAlreadyEnable = 1602
+	CodeTotpNotEnabled    = 1603
+	CodeTotpSetupExpired  = 1604
+)
+
+func ErrTotpInvalid(c *gin.Context) {
+	Fail(c, http.StatusBadRequest, CodeTotpInvalid, "验证码无效")
+}
+
+func ErrTotpLocked(c *gin.Context) {
+	Fail(c, http.StatusTooManyRequests, CodeTotpLocked, "验证失败次数过多，请稍后再试")
+}
+
+func ErrTotpAlreadyEnabled(c *gin.Context) {
+	Fail(c, http.StatusBadRequest, CodeTotpAlreadyEnable, "已绑定，请先解绑")
+}
+
+func ErrTotpNotEnabled(c *gin.Context) {
+	Fail(c, http.StatusBadRequest, CodeTotpNotEnabled, "未绑定")
+}
+
+func ErrTotpSetupExpired(c *gin.Context) {
+	Fail(c, http.StatusBadRequest, CodeTotpSetupExpired, "二维码已过期，请刷新后重新扫描")
+}

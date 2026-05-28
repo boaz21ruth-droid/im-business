@@ -14,10 +14,22 @@ jwt:
   secret: "CHANGE-THIS-IN-PRODUCTION-32CHARS"
   expire_hours: 168         # 7 days
 
+totp:
+  # AES-256 key (32 bytes / 64 hex chars) used to encrypt the per-user TOTP secret at rest.
+  # Generate one with: openssl rand -hex 32
+  encrypt_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
 openim:
   api_url: "http://localhost:10002"   # OpenIM API gateway
   admin_user_id: "imAdmin"
   secret: "openIM123"                 # matches open-im-server config/share.yml
+
+smtp:                               # uncomment to enable real email verification codes
+   host: smtp.gmail.com
+   port: 465                         # 587 = STARTTLS (Gmail/Outlook); 465 = SSL
+   username: boazbin92@gmail.com
+   password: "zljsujsidbrfokim"       # Gmail App Password — no spaces
+   from: boazbin92@gmail.com
 
 wallet:
   stream_provider: moralis

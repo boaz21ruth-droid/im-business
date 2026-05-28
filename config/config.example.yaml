@@ -14,6 +14,10 @@ jwt:
   secret: "CHANGE-THIS-IN-PRODUCTION-32CHARS"
   expire_hours: 168         # 7 days
 
+totp:
+  # 32-byte AES key as 64 hex chars. Generate one with: openssl rand -hex 32
+  encrypt_key: "YOUR-64-HEX-CHAR-AES-256-KEY-HERE"
+
 openim:
   api_url: "http://localhost:10002"   # OpenIM API gateway
   admin_user_id: "imAdmin"

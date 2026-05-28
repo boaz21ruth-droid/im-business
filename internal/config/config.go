@@ -6,6 +6,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+type SmtpConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	From     string `mapstructure:"from"`
+}
+
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Postgres PostgresConfig `mapstructure:"postgres"`
@@ -13,6 +21,14 @@ type Config struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	OpenIM   OpenIMConfig   `mapstructure:"openim"`
 	Wallet   WalletConfig   `mapstructure:"wallet"`
+	TOTP     TOTPConfig     `mapstructure:"totp"`
+	SMTP     *SmtpConfig    `mapstructure:"smtp"` // optional; nil = dev mode (mock code)
+}
+
+type TOTPConfig struct {
+	// EncryptKey is a hex string for AES-256 (64 hex chars = 32 bytes).
+	// Used to encrypt totp_secret at rest in the users table.
+	EncryptKey string `mapstructure:"encrypt_key"`
 }
 
 // ProviderKeyConfig holds API keys for a provider.

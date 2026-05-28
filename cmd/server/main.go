@@ -20,6 +20,7 @@ import (
 	"github.com/web1/im-business/internal/wallet"
 	"github.com/web1/im-business/internal/wallet/provider"
 	codepkg "github.com/web1/im-business/pkg/code"
+	"github.com/web1/im-business/pkg/cryptoutil"
 	jwtpkg "github.com/web1/im-business/pkg/jwt"
 )
 
@@ -50,13 +51,29 @@ func main() {
 	userRepo := repo.NewUserRepo(gdb)
 	openimCli := service.NewOpenIMClient(cfg.OpenIM)
 	jwtSvc := jwtpkg.NewService(cfg.JWT.Secret, time.Duration(cfg.JWT.ExpireHours)*time.Hour)
-	codeSvc := codepkg.NewService(rdb)
+	var smtpCfg *codepkg.SMTPConfig
+	if cfg.SMTP != nil {
+		smtpCfg = &codepkg.SMTPConfig{
+			Host:     cfg.SMTP.Host,
+			Port:     cfg.SMTP.Port,
+			Username: cfg.SMTP.Username,
+			Password: cfg.SMTP.Password,
+			From:     cfg.SMTP.From,
+		}
+	}
+	codeSvc := codepkg.NewService(rdb, smtpCfg)
 
 	accountSvc, err := service.NewAccountService(userRepo, openimCli, jwtSvc, codeSvc)
 	if err != nil {
 		log.Fatal("account service", zap.Error(err))
 	}
 	userSvc := service.NewUserService(userRepo)
+
+	totpKey, err := cryptoutil.DecodeKey(cfg.TOTP.EncryptKey)
+	if err != nil {
+		log.Fatal("totp encrypt_key invalid", zap.Error(err))
+	}
+	totpSvc := service.NewTotpService(userRepo, rdb, totpKey)
 
 	// Wallet components
 	walletRepo := repo.NewWalletRepo(gdb)
@@ -84,6 +101,7 @@ func main() {
 		handler.NewUserHandler(userSvc),
 		handler.NewWalletHandler(walletSvc),
 		handler.NewWebhookHandler(walletSvc, streamProvidersMap),
+		handler.NewTotpHandler(totpSvc, userSvc),
 	)
 
 	srv := &http.Server{

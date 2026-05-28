@@ -35,6 +35,20 @@ func (h *WalletHandler) RegisterAddresses(c *gin.Context) {
 	resp.OK(c, nil)
 }
 
+// GetAddresses handles GET /wallet/addresses.
+func (h *WalletHandler) GetAddresses(c *gin.Context) {
+	userID := c.GetString(middleware.UserIDKey)
+	addresses, err := h.svc.GetRegisteredAddresses(c.Request.Context(), userID)
+	if err != nil {
+		resp.ErrInternal(c, err.Error())
+		return
+	}
+	resp.OK(c, gin.H{
+		"hasWallet": len(addresses) > 0,
+		"addresses": addresses,
+	})
+}
+
 // GetTxHistory handles GET /wallet/tx-history.
 func (h *WalletHandler) GetTxHistory(c *gin.Context) {
 	chainKey := c.Query("chain")

@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *UserHandler, wal *WalletHandler, wh *WebhookHandler) *gin.Engine {
+func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *UserHandler, wal *WalletHandler, wh *WebhookHandler, totp *TotpHandler) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger(log))
@@ -59,6 +59,10 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 				"liveURL": "",
 			}})
 		})
+		u.POST("/totp/setup", totp.Setup)
+		u.POST("/totp/enable", totp.Enable)
+		u.POST("/totp/disable", totp.Disable)
+		u.GET("/totp/status", totp.Status)
 	}
 
 	r.POST("/friend/search", auth, user.SearchFriendInfo)
@@ -66,7 +70,9 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 	w := r.Group("/wallet", auth)
 	{
 		w.POST("/addresses", wal.RegisterAddresses)
+		w.GET("/addresses", wal.GetAddresses)
 		w.GET("/tx-history", wal.GetTxHistory)
+		w.POST("/totp/verify", totp.WalletVerify)
 	}
 
 	r.POST("/webhook/:provider", wh.HandleWebhook)

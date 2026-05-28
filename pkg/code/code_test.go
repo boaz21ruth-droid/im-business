@@ -19,7 +19,7 @@ func newTestRedis(t *testing.T) *redis.Client {
 
 func TestSendAndVerifyOK(t *testing.T) {
 	rdb := newTestRedis(t)
-	svc := NewService(rdb)
+	svc := NewService(rdb, nil)
 	if err := svc.Send(context.Background(), "test@example.com"); err != nil {
 		t.Fatalf("Send: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestSendAndVerifyOK(t *testing.T) {
 
 func TestVerifyWrongCode(t *testing.T) {
 	rdb := newTestRedis(t)
-	svc := NewService(rdb)
+	svc := NewService(rdb, nil)
 	svc.Send(context.Background(), "test@example.com")
 	if err := svc.Verify(context.Background(), "test@example.com", "999999"); err == nil {
 		t.Fatal("expected error for wrong code")
@@ -39,7 +39,7 @@ func TestVerifyWrongCode(t *testing.T) {
 
 func TestVerifyExpired(t *testing.T) {
 	rdb := newTestRedis(t)
-	svc := NewService(rdb)
+	svc := NewService(rdb, nil)
 	// no Send — key doesn't exist
 	if err := svc.Verify(context.Background(), "ghost@example.com", "123456"); err == nil {
 		t.Fatal("expected error for non-existent code")
