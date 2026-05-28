@@ -4,6 +4,7 @@
 
 # Config with secrets (use config.example.yaml as template)
 config/config.yaml
+config/docker.config.yaml
 
 # Go test cache
 *.test
