@@ -4,17 +4,26 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/web1/im-business/internal/config"
 	"github.com/web1/im-business/internal/middleware"
 	"github.com/web1/im-business/internal/wallet"
 	"github.com/web1/im-business/pkg/resp"
 )
 
 type WalletHandler struct {
-	svc *wallet.WalletService
+	svc        *wallet.WalletService
+	swapConfig config.SwapConfig
 }
 
-func NewWalletHandler(svc *wallet.WalletService) *WalletHandler {
-	return &WalletHandler{svc: svc}
+func NewWalletHandler(svc *wallet.WalletService, swapConfig config.SwapConfig) *WalletHandler {
+	return &WalletHandler{svc: svc, swapConfig: swapConfig}
+}
+
+// GetSwapConfig handles GET /wallet/swap_config.
+// Returns the runtime Swap configuration so the Flutter client can rotate API
+// keys, RPC URLs, fee recipients, and router whitelists without an app release.
+func (h *WalletHandler) GetSwapConfig(c *gin.Context) {
+	resp.OK(c, h.swapConfig)
 }
 
 // RegisterAddresses handles POST /wallet/addresses.

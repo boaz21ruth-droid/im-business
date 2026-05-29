@@ -45,3 +45,53 @@ wallet:
     api_key: ""         # optional; works without key, higher quota with key
   covalent:
     api_key: "YOUR_COVALENT_API_KEY"
+
+# Swap (闪兑) runtime config delivered to Flutter via GET /wallet/swap_config.
+# Rotating these does not require an app release.
+swap:
+  providers:
+    zerox:
+      api_key: "YOUR_ZEROX_API_KEY"            # https://dashboard.0x.org → Swap API
+      api_base: "https://api.0x.org"
+      version: "v2"
+  chains:
+    eth:
+      rpcs:
+        - "https://cloudflare-eth.com"
+        - "https://eth.llamarpc.com"
+        - "https://ethereum.publicnode.com"
+      fee_recipient: ""                        # populate to enable 0.3% platform fee on this chain
+      allowed_routers:
+        - "0x0000000000001fF3684f28c67538d4D072C22734"  # 0x AllowanceHolder (same on every EVM chain)
+    bsc:
+      rpcs:
+        - "https://bsc-dataseed.binance.org"
+        - "https://bsc.publicnode.com"
+      fee_recipient: ""
+      allowed_routers:
+        - "0x0000000000001fF3684f28c67538d4D072C22734"
+    polygon:
+      rpcs:
+        - "https://polygon-rpc.com"
+        - "https://polygon.publicnode.com"
+      fee_recipient: ""
+      allowed_routers:
+        - "0x0000000000001fF3684f28c67538d4D072C22734"
+    arbitrum:
+      rpcs:
+        - "https://arb1.arbitrum.io/rpc"
+        - "https://arbitrum.publicnode.com"
+      fee_recipient: ""
+      allowed_routers:
+        - "0x0000000000001fF3684f28c67538d4D072C22734"
+    optimism:
+      rpcs:
+        - "https://mainnet.optimism.io"
+        - "https://optimism.publicnode.com"
+      fee_recipient: ""
+      allowed_routers:
+        - "0x0000000000001fF3684f28c67538d4D072C22734"
+  limits:
+    large_amount_usd_threshold: 10000          # $-equivalent threshold for the secondary confirm dialog
+    price_drift_bps: 100                       # 1% drift between first quote and re-quote → confirm
+    approve_receipt_timeout_seconds: 60
