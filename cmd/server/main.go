@@ -99,7 +99,7 @@ func main() {
 	r := handler.NewRouter(log, jwtSvc,
 		handler.NewAccountHandler(accountSvc),
 		handler.NewUserHandler(userSvc),
-		handler.NewWalletHandler(walletSvc),
+		handler.NewWalletHandler(walletSvc, cfg.Swap),
 		handler.NewWebhookHandler(walletSvc, streamProvidersMap),
 		handler.NewTotpHandler(totpSvc, userSvc),
 	)

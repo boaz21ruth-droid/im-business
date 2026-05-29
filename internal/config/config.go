@@ -21,6 +21,7 @@ type Config struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	OpenIM   OpenIMConfig   `mapstructure:"openim"`
 	Wallet   WalletConfig   `mapstructure:"wallet"`
+	Swap     SwapConfig     `mapstructure:"swap"`
 	TOTP     TOTPConfig     `mapstructure:"totp"`
 	SMTP     *SmtpConfig    `mapstructure:"smtp"` // optional; nil = dev mode (mock code)
 }
