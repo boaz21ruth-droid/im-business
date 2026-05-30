@@ -1,3 +1,10 @@
+# Single config file for both host and docker. Docker-only values (service
+# hostnames, mode, webhook URLs) are overridden by env vars in
+# docker-compose.yaml — viper's AutomaticEnv + dot→underscore replacer maps
+# env vars like POSTGRES_DSN onto the postgres.dsn yaml key.
+#
+# Copy this file to config.yaml and fill in the secrets.
+
 server:
   port: 10008
   mode: debug

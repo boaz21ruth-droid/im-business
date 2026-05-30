@@ -2,9 +2,10 @@
 /bin/
 *.exe
 
-# Config with secrets (use config.example.yaml as template)
+# Config with secrets (use config.example.yaml as template).
+# docker.config.yaml is no longer needed — docker-compose.yaml overrides the
+# container-only fields via env vars.
 config/config.yaml
-config/docker.config.yaml
 
 # Go test cache
 *.test
