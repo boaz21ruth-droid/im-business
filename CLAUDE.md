@@ -32,8 +32,9 @@ im-business/
 │   ├── code/code.go                ← Redis-backed verification codes (mock: "123456")
 │   └── resp/resp.go                ← unified JSON envelope {errCode, errMsg, data}
 ├── config/
-│   ├── config.yaml                 ← local dev config
-│   └── docker.config.yaml          ← Docker config (container hostnames)
+│   └── config.yaml                 ← single source of truth (gitignored).
+│                                     Docker-only values overridden via env vars
+│                                     in docker-compose.yaml
 ├── Dockerfile
 └── docker-compose.yaml
 ```
@@ -146,8 +147,10 @@ curl -s -X POST http://localhost:10008/account/login \
 ## Docker
 
 ```bash
-# Joins the 'openim' docker network; uses config/docker.config.yaml
+# Joins the 'openim' docker network; mounts config/config.yaml and overrides
+# container hostnames + mode + webhook URLs via env vars (see docker-compose.yaml).
 docker compose up -d --build
 ```
 
-Container hostnames in docker config: `postgres-business`, `redis`, `openim-api`.
+Container hostnames overridden via env in docker-compose.yaml:
+`postgres-business`, `redis:6379`, `http://openim-server:10002`.

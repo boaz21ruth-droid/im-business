@@ -35,7 +35,20 @@ services:
       - "10008:10008"
     command: ["-config", "config/config.yaml"]
     volumes:
-      - ./config/docker.config.yaml:/app/config/config.yaml:ro
+      # Same config.yaml that host runs use. Container-only diffs (service
+      # hostnames, mode, webhook URLs) come from `environment` below — viper's
+      # AutomaticEnv + dot→underscore replacer maps env vars like POSTGRES_DSN
+      # to the postgres.dsn yaml key.
+      - ./config/config.yaml:/app/config/config.yaml:ro
+    environment:
+      SERVER_MODE: release
+      POSTGRES_DSN: "host=postgres-business user=im_business password=im_business123 dbname=im_business port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+      REDIS_ADDR: "redis:6379"
+      OPENIM_API_URL: "http://openim-server:10002"
+      # Webhook URLs are empty in container mode: a public reverse proxy
+      # supplies the externally reachable URL when actually deployed.
+      WALLET_MORALIS_WEBHOOK_URL: ""
+      WALLET_QUICKNODE_WEBHOOK_URL: ""
     depends_on:
       postgres-business:
         condition: service_healthy
