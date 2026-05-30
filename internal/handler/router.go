@@ -73,6 +73,8 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 		w.GET("/addresses", wal.GetAddresses)
 		w.GET("/tx-history", wal.GetTxHistory)
 		w.GET("/swap_config", wal.GetSwapConfig)
+		w.GET("/price", wal.GetSwapPrice)
+		w.GET("/quote", wal.GetSwapQuote)
 		w.POST("/totp/verify", totp.WalletVerify)
 	}
 

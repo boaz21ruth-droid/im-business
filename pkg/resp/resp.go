@@ -33,6 +33,21 @@ func ErrInternal(c *gin.Context, msg string) {
 	Fail(c, http.StatusInternalServerError, 1002, msg)
 }
 
+// Biz returns HTTP 200 with a non-zero business error code in the envelope.
+// Used for expected, recoverable failures the client maps to its own UX states
+// (e.g. swap "no liquidity"), rather than transport-level errors.
+func Biz(c *gin.Context, errCode int, msg string) {
+	c.JSON(http.StatusOK, envelope{ErrCode: errCode, ErrMsg: msg})
+}
+
+// Swap quote error codes (1700–1709). The Flutter BackendQuoteProvider maps
+// these to SwapErrorKind.
+const (
+	CodeSwapNoQuote         = 1700 // no provider returned a usable quote
+	CodeSwapBadParams       = 1701 // malformed request
+	CodeSwapChainUnsupported = 1702 // no aggregator configured for the chain
+)
+
 // TOTP-related error codes (1600–1604).
 const (
 	CodeTotpInvalid       = 1600
