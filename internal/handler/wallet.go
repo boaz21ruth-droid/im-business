@@ -52,19 +52,20 @@ func parseQuoteRequest(c *gin.Context) (quote.Request, error) {
 	}
 	return quote.Request{
 		ChainKey:    chainKey,
-		SellToken:   parseTokenParam(c.Query("sellToken")),
-		BuyToken:    parseTokenParam(c.Query("buyToken")),
+		SellToken:   parseTokenParam(c.Query("sellToken"), c.Query("sellDecimals")),
+		BuyToken:    parseTokenParam(c.Query("buyToken"), c.Query("buyDecimals")),
 		SellAmount:  amount,
 		Taker:       c.Query("taker"),
 		SlippageBps: slippage,
 	}, nil
 }
 
-func parseTokenParam(v string) quote.Token {
-	if v == "" || v == "native" {
-		return quote.Token{}
+func parseTokenParam(addr, decimals string) quote.Token {
+	d, _ := strconv.Atoi(decimals)
+	if addr == "" || addr == "native" {
+		return quote.Token{Decimals: d}
 	}
-	return quote.Token{ContractAddress: v}
+	return quote.Token{ContractAddress: addr, Decimals: d}
 }
 
 func writeQuoteErr(c *gin.Context, err error) {

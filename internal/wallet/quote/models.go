@@ -9,6 +9,7 @@ const NativeTokenSentinel = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 // Token identifies an asset on a chain. ContractAddress == "" means native.
 type Token struct {
 	ContractAddress string // "" = native
+	Decimals        int    // required by some providers (e.g. Paraswap); 0 = unknown
 }
 
 // IsNative reports whether the token is the chain's native asset.

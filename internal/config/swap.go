@@ -21,11 +21,14 @@ type SwapConfig struct {
 	Limits         SwapLimits           `mapstructure:"limits" json:"limits"`
 }
 
-// SwapProviderCreds holds the API credentials for one aggregator.
+// SwapProviderCreds holds the API credentials/identifiers for one aggregator.
+// Keyless aggregators (KyberSwap, Paraswap) use ClientID/Partner instead of a key.
 type SwapProviderCreds struct {
-	APIKey  string `mapstructure:"api_key"`
-	APIBase string `mapstructure:"api_base"`
-	Version string `mapstructure:"version"`
+	APIKey   string `mapstructure:"api_key"`
+	APIBase  string `mapstructure:"api_base"`
+	Version  string `mapstructure:"version"`
+	ClientID string `mapstructure:"client_id"` // KyberSwap x-client-id (optional)
+	Partner  string `mapstructure:"partner"`   // Paraswap partner name (optional)
 }
 
 type SwapChain struct {

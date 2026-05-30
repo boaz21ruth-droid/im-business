@@ -22,7 +22,12 @@ func BuildAggregator(cfg config.SwapConfig, log *zap.Logger) *Aggregator {
 	if c, ok := cfg.Providers["zerox"]; ok {
 		all["zerox"] = NewZeroExProvider(c.APIKey, c.APIBase, c.Version, feeRecipients, cfg.FeeBps)
 	}
-	// TODO(M2+): all["oneinch"], all["okx"], all["paraswap"], all["uniswap"].
+	// KyberSwap and Paraswap are keyless (no KYC); always available. Optional
+	// client_id / partner come from config when present.
+	kc := cfg.Providers["kyberswap"]
+	all["kyberswap"] = NewKyberSwapProvider(kc.APIBase, kc.ClientID, feeRecipients, cfg.FeeBps)
+	pc := cfg.Providers["paraswap"]
+	all["paraswap"] = NewParaswapProvider(pc.APIBase, pc.Partner, feeRecipients, cfg.FeeBps)
 
 	byChain := map[string][]Provider{}
 	for chain, names := range cfg.QuoteProviders {
