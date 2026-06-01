@@ -25,15 +25,20 @@ var kyberChainSlugs = map[string]string{
 // KyberSwapProvider integrates the KyberSwap Aggregator API v1. Keyless: an
 // optional x-client-id improves rate limits. Two calls: /routes (price) then
 // /route/build (calldata).
+// kyberAMMSources is an allow-list of on-chain AMM source IDs used in AMM-only
+// (fork-test) mode, so off-chain order/PMM/RFQ sources are excluded by default.
+const kyberAMMSources = "uniswap,uniswapv3,uniswap-v4,sushiswap,curve,balancer-v2,pancake-v3,maker-psm"
+
 type KyberSwapProvider struct {
 	apiBase       string
 	clientID      string
 	feeRecipients map[string]string
 	feeBps        int
+	ammOnly       bool
 	client        *http.Client
 }
 
-func NewKyberSwapProvider(apiBase, clientID string, feeRecipients map[string]string, feeBps int) *KyberSwapProvider {
+func NewKyberSwapProvider(apiBase, clientID string, feeRecipients map[string]string, feeBps int, ammOnly bool) *KyberSwapProvider {
 	if apiBase == "" {
 		apiBase = "https://aggregator-api.kyberswap.com"
 	}
@@ -45,6 +50,7 @@ func NewKyberSwapProvider(apiBase, clientID string, feeRecipients map[string]str
 		clientID:      clientID,
 		feeRecipients: feeRecipients,
 		feeBps:        feeBps,
+		ammOnly:       ammOnly,
 		client:        &http.Client{Timeout: 10 * time.Second},
 	}
 }
@@ -87,6 +93,9 @@ func (p *KyberSwapProvider) getRoutes(ctx context.Context, req Request) (*kyberR
 		v.Set("chargeFeeBy", "currency_out")
 		v.Set("isInBps", "true")
 		v.Set("feeReceiver", recipient)
+	}
+	if p.ammOnly {
+		v.Set("includedSources", kyberAMMSources)
 	}
 	u := fmt.Sprintf("%s/%s/api/v1/routes?%s", p.apiBase, slug, v.Encode())
 	httpReq, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)

@@ -25,15 +25,21 @@ var paraswapChainIDs = map[string]int{
 // ParaswapProvider integrates the Paraswap/Velora API v6.2. Keyless (no KYC):
 // an optional partner name attributes volume. Two calls: /prices (price) then
 // /transactions (calldata). Requires token decimals.
+// paraswapAMMVenues is an allow-list of on-chain AMM DEXs used in AMM-only
+// (fork-test) mode. An allow-list is robust: any PMM/RFQ/limit-order venue
+// (which can't settle on a frozen fork) is excluded by default.
+const paraswapAMMVenues = "UniswapV2,UniswapV3,UniswapV4,SushiSwap,Curve,CurveV1,CurveV2,BalancerV1,BalancerV2,MakerPSM,PancakeSwapV3"
+
 type ParaswapProvider struct {
 	apiBase       string
 	partner       string
 	feeRecipients map[string]string
 	feeBps        int
+	ammOnly       bool
 	client        *http.Client
 }
 
-func NewParaswapProvider(apiBase, partner string, feeRecipients map[string]string, feeBps int) *ParaswapProvider {
+func NewParaswapProvider(apiBase, partner string, feeRecipients map[string]string, feeBps int, ammOnly bool) *ParaswapProvider {
 	if apiBase == "" {
 		apiBase = "https://api.paraswap.io"
 	}
@@ -45,6 +51,7 @@ func NewParaswapProvider(apiBase, partner string, feeRecipients map[string]strin
 		partner:       partner,
 		feeRecipients: feeRecipients,
 		feeBps:        feeBps,
+		ammOnly:       ammOnly,
 		client:        &http.Client{Timeout: 10 * time.Second},
 	}
 }
@@ -71,6 +78,9 @@ func (p *ParaswapProvider) getPriceRoute(ctx context.Context, req Request) (json
 	v.Set("network", strconv.Itoa(chainID))
 	v.Set("version", "6.2") // pin Augustus v6.2; without this the default could drift
 	v.Set("partner", p.partner)
+	if p.ammOnly {
+		v.Set("includeDEXS", paraswapAMMVenues)
+	}
 	u := fmt.Sprintf("%s/prices/?%s", p.apiBase, v.Encode())
 	httpReq, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 

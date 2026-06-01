@@ -38,7 +38,7 @@ func TestKyberSwap_QuoteParsesAndChargesFee(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	p := NewKyberSwapProvider(srv.URL, "im-wallet", map[string]string{"eth": "0xfee"}, 30)
+	p := NewKyberSwapProvider(srv.URL, "im-wallet", map[string]string{"eth": "0xfee"}, 30, false)
 	q, err := p.Quote(context.Background(), Request{
 		ChainKey: "eth", SellToken: Token{ContractAddress: "0xUSDC"},
 		BuyToken: Token{ContractAddress: "0xUSDT"}, SellAmount: big.NewInt(1e9),
@@ -92,7 +92,7 @@ func TestParaswap_QuoteSendsDecimalsAndDirectFee(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	p := NewParaswapProvider(srv.URL, "im-wallet", map[string]string{"eth": "0xfee"}, 30)
+	p := NewParaswapProvider(srv.URL, "im-wallet", map[string]string{"eth": "0xfee"}, 30, false)
 	q, err := p.Quote(context.Background(), Request{
 		ChainKey: "eth", SellToken: Token{ContractAddress: "0xUSDC", Decimals: 6},
 		BuyToken: Token{ContractAddress: "0xUSDT", Decimals: 6}, SellAmount: big.NewInt(1e9),
