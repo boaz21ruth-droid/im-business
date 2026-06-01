@@ -22,6 +22,7 @@ type Config struct {
 	OpenIM   OpenIMConfig   `mapstructure:"openim"`
 	Wallet   WalletConfig   `mapstructure:"wallet"`
 	Swap     SwapConfig     `mapstructure:"swap"`
+	Bridge   BridgeConfig   `mapstructure:"bridge"`
 	TOTP     TOTPConfig     `mapstructure:"totp"`
 	SMTP     *SmtpConfig    `mapstructure:"smtp"` // optional; nil = dev mode (mock code)
 }
