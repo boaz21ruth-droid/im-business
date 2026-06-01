@@ -23,6 +23,7 @@ type Config struct {
 	Wallet   WalletConfig   `mapstructure:"wallet"`
 	Swap     SwapConfig     `mapstructure:"swap"`
 	Bridge   BridgeConfig   `mapstructure:"bridge"`
+	Intent   IntentConfig   `mapstructure:"intent"`
 	TOTP     TOTPConfig     `mapstructure:"totp"`
 	SMTP     *SmtpConfig    `mapstructure:"smtp"` // optional; nil = dev mode (mock code)
 }
