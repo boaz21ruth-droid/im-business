@@ -27,7 +27,7 @@ var kyberChainSlugs = map[string]string{
 // /route/build (calldata).
 // kyberAMMSources is an allow-list of on-chain AMM source IDs used in AMM-only
 // (fork-test) mode, so off-chain order/PMM/RFQ sources are excluded by default.
-const kyberAMMSources = "uniswap,uniswapv3,uniswap-v4,sushiswap,curve,balancer-v2,pancake-v3,maker-psm"
+const kyberAMMSources = "uniswap,uniswapv3,sushiswap,curve,balancer-v2,maker-psm"
 
 type KyberSwapProvider struct {
 	apiBase       string
