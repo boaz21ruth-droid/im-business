@@ -11,6 +11,10 @@ type SwapConfig struct {
 	// FeeBps is the platform fee in basis points, injected into each provider's
 	// own fee mechanism server-side (e.g. 0x swapFeeBps).
 	FeeBps int `mapstructure:"fee_bps" json:"feeBps"`
+	// AMMOnly restricts routing to on-chain AMM pools (no PMM/RFQ/limit-order
+	// venues). For local mainnet-fork testing only: off-chain orders can't be
+	// settled on a frozen fork. Leave false in production.
+	AMMOnly bool `mapstructure:"amm_only" json:"-"`
 	// Providers holds per-aggregator credentials. json:"-" — NEVER sent to the
 	// client; aggregation and API keys are server-side only.
 	Providers map[string]SwapProviderCreds `mapstructure:"providers" json:"-"`
