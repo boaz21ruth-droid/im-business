@@ -19,6 +19,7 @@ import (
 	"github.com/web1/im-business/internal/service"
 	"github.com/web1/im-business/internal/wallet"
 	"github.com/web1/im-business/internal/wallet/bridge"
+	"github.com/web1/im-business/internal/wallet/intent"
 	"github.com/web1/im-business/internal/wallet/provider"
 	"github.com/web1/im-business/internal/wallet/quote"
 	codepkg "github.com/web1/im-business/pkg/code"
@@ -88,6 +89,7 @@ func main() {
 	walletSvc := wallet.NewWalletService(walletRepo, walletCache, openimCli, streamProviders, wsProviders, multiProviders, tronPoller, log)
 	swapAggregator := quote.BuildAggregator(cfg.Swap, log)
 	bridgeProvider := bridge.BuildProvider(cfg.Bridge)
+	intentProvider := intent.BuildProvider(cfg.Intent)
 
 	streamProvidersMap := make(map[string]provider.StreamProvider, len(streamProviders))
 	for _, sp := range streamProviders {
@@ -103,7 +105,7 @@ func main() {
 	r := handler.NewRouter(log, jwtSvc,
 		handler.NewAccountHandler(accountSvc),
 		handler.NewUserHandler(userSvc),
-		handler.NewWalletHandler(walletSvc, cfg.Swap, swapAggregator, bridgeProvider),
+		handler.NewWalletHandler(walletSvc, cfg.Swap, swapAggregator, bridgeProvider, intentProvider),
 		handler.NewWebhookHandler(walletSvc, streamProvidersMap),
 		handler.NewTotpHandler(totpSvc, userSvc),
 	)

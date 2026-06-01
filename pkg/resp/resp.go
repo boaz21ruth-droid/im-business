@@ -55,6 +55,13 @@ const (
 	CodeBridgeChainUnsupported = 1722 // from/to chain not supported
 )
 
+// Intent (order-based) swap error codes (1730–1739).
+const (
+	CodeIntentNoQuote          = 1730 // no quote / order rejected
+	CodeIntentBadParams        = 1731 // malformed request
+	CodeIntentChainUnsupported = 1732 // chain not supported by the intent provider
+)
+
 // TOTP-related error codes (1600–1604).
 const (
 	CodeTotpInvalid       = 1600

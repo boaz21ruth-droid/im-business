@@ -10,6 +10,7 @@ import (
 	"github.com/web1/im-business/internal/middleware"
 	"github.com/web1/im-business/internal/wallet"
 	"github.com/web1/im-business/internal/wallet/bridge"
+	"github.com/web1/im-business/internal/wallet/intent"
 	"github.com/web1/im-business/internal/wallet/quote"
 	"github.com/web1/im-business/pkg/resp"
 )
@@ -19,10 +20,11 @@ type WalletHandler struct {
 	swapConfig config.SwapConfig
 	agg        *quote.Aggregator
 	bridge     bridge.Provider
+	intent     intent.Provider
 }
 
-func NewWalletHandler(svc *wallet.WalletService, swapConfig config.SwapConfig, agg *quote.Aggregator, br bridge.Provider) *WalletHandler {
-	return &WalletHandler{svc: svc, swapConfig: swapConfig, agg: agg, bridge: br}
+func NewWalletHandler(svc *wallet.WalletService, swapConfig config.SwapConfig, agg *quote.Aggregator, br bridge.Provider, in intent.Provider) *WalletHandler {
+	return &WalletHandler{svc: svc, swapConfig: swapConfig, agg: agg, bridge: br, intent: in}
 }
 
 // GetSwapConfig handles GET /wallet/swap_config.
@@ -192,6 +194,91 @@ func (h *WalletHandler) GetBridgeStatus(c *gin.Context) {
 		return
 	}
 	resp.OK(c, st)
+}
+
+// GetIntentQuote handles GET /wallet/intent/quote — a ready-to-sign EIP-712
+// order (CoW) + domain/approval metadata. The client signs it and POSTs it back.
+func (h *WalletHandler) GetIntentQuote(c *gin.Context) {
+	chainKey := c.Query("chainKey")
+	from := c.Query("from")
+	amount, ok := new(big.Int).SetString(c.Query("sellAmount"), 10)
+	if chainKey == "" || from == "" || !ok || amount.Sign() <= 0 {
+		resp.Biz(c, resp.CodeIntentBadParams, "chainKey, from, positive sellAmount required")
+		return
+	}
+	if !h.intent.SupportsChain(chainKey) {
+		resp.Biz(c, resp.CodeIntentChainUnsupported, "chain not supported for intent swap")
+		return
+	}
+	slippage := 50
+	if s := c.Query("slippageBps"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil && v >= 0 && v <= 5000 {
+			slippage = v
+		}
+	}
+	out, err := h.intent.Quote(c.Request.Context(), intent.Request{
+		ChainKey:    chainKey,
+		SellToken:   c.Query("sellToken"),
+		BuyToken:    c.Query("buyToken"),
+		SellAmount:  amount,
+		From:        from,
+		SlippageBps: slippage,
+	})
+	if err != nil {
+		writeIntentErr(c, err)
+		return
+	}
+	resp.OK(c, out)
+}
+
+// PostIntentOrder handles POST /wallet/intent/order — submit a signed order.
+func (h *WalletHandler) PostIntentOrder(c *gin.Context) {
+	var body struct {
+		ChainKey string               `json:"chainKey"`
+		Order    intent.Order         `json:"order"`
+		Sig      string               `json:"signature"`
+		From     string               `json:"from"`
+		QuoteID  int64                `json:"quoteId"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || body.ChainKey == "" || body.Sig == "" {
+		resp.Biz(c, resp.CodeIntentBadParams, "chainKey, order, signature required")
+		return
+	}
+	uid, err := h.intent.Submit(c.Request.Context(), body.ChainKey, intent.SubmitRequest{
+		Order: body.Order, Signature: body.Sig, From: body.From, QuoteID: body.QuoteID,
+	})
+	if err != nil {
+		writeIntentErr(c, err)
+		return
+	}
+	resp.OK(c, gin.H{"orderUid": uid})
+}
+
+// GetIntentStatus handles GET /wallet/intent/status — order settlement state.
+func (h *WalletHandler) GetIntentStatus(c *gin.Context) {
+	chainKey := c.Query("chainKey")
+	orderUID := c.Query("orderUid")
+	if chainKey == "" || orderUID == "" {
+		resp.Biz(c, resp.CodeIntentBadParams, "chainKey and orderUid required")
+		return
+	}
+	st, err := h.intent.Status(c.Request.Context(), chainKey, orderUID)
+	if err != nil {
+		writeIntentErr(c, err)
+		return
+	}
+	resp.OK(c, st)
+}
+
+func writeIntentErr(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, intent.ErrUnsupportedChain):
+		resp.Biz(c, resp.CodeIntentChainUnsupported, "chain not supported for intent swap")
+	case errors.Is(err, intent.ErrNoQuote):
+		resp.Biz(c, resp.CodeIntentNoQuote, "no intent quote available")
+	default:
+		resp.Biz(c, resp.CodeIntentNoQuote, err.Error())
+	}
 }
 
 // RegisterAddresses handles POST /wallet/addresses.
