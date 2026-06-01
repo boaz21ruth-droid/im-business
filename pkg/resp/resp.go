@@ -48,6 +48,13 @@ const (
 	CodeSwapChainUnsupported = 1702 // no aggregator configured for the chain
 )
 
+// Cross-chain bridge error codes (1720–1729).
+const (
+	CodeBridgeNoRoute          = 1720 // no bridge route for the pair/amount
+	CodeBridgeBadParams        = 1721 // malformed request
+	CodeBridgeChainUnsupported = 1722 // from/to chain not supported
+)
+
 // TOTP-related error codes (1600–1604).
 const (
 	CodeTotpInvalid       = 1600

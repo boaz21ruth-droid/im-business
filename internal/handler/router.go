@@ -75,6 +75,8 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 		w.GET("/swap_config", wal.GetSwapConfig)
 		w.GET("/price", wal.GetSwapPrice)
 		w.GET("/quote", wal.GetSwapQuote)
+		w.GET("/bridge/quote", wal.GetBridgeQuote)
+		w.GET("/bridge/status", wal.GetBridgeStatus)
 		w.POST("/totp/verify", totp.WalletVerify)
 	}
 

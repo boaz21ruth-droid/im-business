@@ -9,6 +9,7 @@ import (
 	"github.com/web1/im-business/internal/config"
 	"github.com/web1/im-business/internal/middleware"
 	"github.com/web1/im-business/internal/wallet"
+	"github.com/web1/im-business/internal/wallet/bridge"
 	"github.com/web1/im-business/internal/wallet/quote"
 	"github.com/web1/im-business/pkg/resp"
 )
@@ -17,10 +18,11 @@ type WalletHandler struct {
 	svc        *wallet.WalletService
 	swapConfig config.SwapConfig
 	agg        *quote.Aggregator
+	bridge     bridge.Provider
 }
 
-func NewWalletHandler(svc *wallet.WalletService, swapConfig config.SwapConfig, agg *quote.Aggregator) *WalletHandler {
-	return &WalletHandler{svc: svc, swapConfig: swapConfig, agg: agg}
+func NewWalletHandler(svc *wallet.WalletService, swapConfig config.SwapConfig, agg *quote.Aggregator, br bridge.Provider) *WalletHandler {
+	return &WalletHandler{svc: svc, swapConfig: swapConfig, agg: agg, bridge: br}
 }
 
 // GetSwapConfig handles GET /wallet/swap_config.
@@ -120,6 +122,76 @@ func (h *WalletHandler) GetSwapQuote(c *gin.Context) {
 		return
 	}
 	resp.OK(c, out)
+}
+
+// GetBridgeQuote handles GET /wallet/bridge/quote — a cross-chain route with a
+// source-chain signable tx. The client signs+broadcasts it and then polls
+// /wallet/bridge/status for delivery.
+func (h *WalletHandler) GetBridgeQuote(c *gin.Context) {
+	fromChain := c.Query("fromChain")
+	toChain := c.Query("toChain")
+	if fromChain == "" || toChain == "" {
+		resp.Biz(c, resp.CodeBridgeBadParams, "fromChain and toChain are required")
+		return
+	}
+	amount, ok := new(big.Int).SetString(c.Query("fromAmount"), 10)
+	if !ok || amount.Sign() <= 0 {
+		resp.Biz(c, resp.CodeBridgeBadParams, "fromAmount must be a positive integer")
+		return
+	}
+	from := c.Query("fromAddress")
+	if from == "" {
+		resp.Biz(c, resp.CodeBridgeBadParams, "fromAddress is required")
+		return
+	}
+	if !h.bridge.SupportsChain(fromChain) || !h.bridge.SupportsChain(toChain) {
+		resp.Biz(c, resp.CodeBridgeChainUnsupported, "chain not supported for bridging")
+		return
+	}
+	slippage := 100
+	if s := c.Query("slippageBps"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil && v >= 0 && v <= 5000 {
+			slippage = v
+		}
+	}
+	q, err := h.bridge.Quote(c.Request.Context(), bridge.Request{
+		FromChain:   fromChain,
+		ToChain:     toChain,
+		FromToken:   c.Query("fromToken"),
+		ToToken:     c.Query("toToken"),
+		FromAmount:  amount,
+		FromAddress: from,
+		ToAddress:   c.Query("toAddress"),
+		SlippageBps: slippage,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, bridge.ErrNoRoute):
+			resp.Biz(c, resp.CodeBridgeNoRoute, "no bridge route available")
+		case errors.Is(err, bridge.ErrUnsupportedChain):
+			resp.Biz(c, resp.CodeBridgeChainUnsupported, "chain not supported for bridging")
+		default:
+			resp.Biz(c, resp.CodeBridgeNoRoute, err.Error())
+		}
+		return
+	}
+	resp.OK(c, q)
+}
+
+// GetBridgeStatus handles GET /wallet/bridge/status — cross-chain delivery state
+// for a broadcast source tx.
+func (h *WalletHandler) GetBridgeStatus(c *gin.Context) {
+	txHash := c.Query("txHash")
+	if txHash == "" {
+		resp.Biz(c, resp.CodeBridgeBadParams, "txHash is required")
+		return
+	}
+	st, err := h.bridge.Status(c.Request.Context(), c.Query("fromChain"), c.Query("toChain"), txHash, c.Query("tool"))
+	if err != nil {
+		resp.Biz(c, resp.CodeBridgeNoRoute, err.Error())
+		return
+	}
+	resp.OK(c, st)
 }
 
 // RegisterAddresses handles POST /wallet/addresses.
