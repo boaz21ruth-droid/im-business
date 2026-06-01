@@ -28,7 +28,9 @@ var paraswapChainIDs = map[string]int{
 // paraswapAMMVenues is an allow-list of on-chain AMM DEXs used in AMM-only
 // (fork-test) mode. An allow-list is robust: any PMM/RFQ/limit-order venue
 // (which can't settle on a frozen fork) is excluded by default.
-const paraswapAMMVenues = "UniswapV2,UniswapV3,UniswapV4,SushiSwap,Curve,CurveV1,CurveV2,BalancerV1,BalancerV2,MakerPSM,PancakeSwapV3"
+// Deep, fork-stable AMMs only. UniswapV4/PancakeV3 excluded: thinner pools drift
+// more from the aggregator's live-mainnet quote → InsufficientReturnAmount on a fork.
+const paraswapAMMVenues = "UniswapV2,UniswapV3,SushiSwap,Curve,CurveV1,CurveV2,BalancerV1,BalancerV2,MakerPSM"
 
 type ParaswapProvider struct {
 	apiBase       string
