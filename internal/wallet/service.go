@@ -55,6 +55,7 @@ type WalletService struct {
 	wsProviders     []provider.WSProvider
 	providers       map[string]*provider.MultiProvider // chain → provider chain
 	tronPoller      *TronPoller
+	localPollers    []*LocalRpcPoller
 	log             *zap.Logger
 }
 
@@ -66,12 +67,20 @@ func NewWalletService(
 	wsProviders []provider.WSProvider,
 	providers map[string]*provider.MultiProvider,
 	tronPoller *TronPoller,
+	localPollers []*LocalRpcPoller,
 	log *zap.Logger,
 ) *WalletService {
 	return &WalletService{
 		repo: repo, cache: cache, openim: openim,
 		streamProviders: streamProviders, wsProviders: wsProviders,
-		providers: providers, tronPoller: tronPoller, log: log,
+		providers: providers, tronPoller: tronPoller, localPollers: localPollers, log: log,
+	}
+}
+
+// StartLocalRpcPollers starts all local RPC pollers as background goroutines.
+func (s *WalletService) StartLocalRpcPollers(ctx context.Context) {
+	for _, lp := range s.localPollers {
+		go lp.Start(ctx)
 	}
 }
 
@@ -104,6 +113,12 @@ func (s *WalletService) RegisterAddresses(ctx context.Context, userID string, ad
 
 		if tronChains[chainKey] {
 			s.tronPoller.AddAddress(userID, chainKey, address)
+		}
+
+		for _, lp := range s.localPollers {
+			if lp.ChainKey() == chainKey {
+				lp.AddAddress(address)
+			}
 		}
 	}
 	return nil

@@ -86,7 +86,16 @@ func main() {
 	streamProviders := wallet.BuildStreamProviders(cfg.Wallet, log)
 	wsProviders := wallet.BuildWSProviders(cfg.Wallet, log)
 	tronPoller := wallet.NewTronPoller(walletRepo, walletCache, openimCli, tronProv, log)
-	walletSvc := wallet.NewWalletService(walletRepo, walletCache, openimCli, streamProviders, wsProviders, multiProviders, tronPoller, log)
+	var localPollers []*wallet.LocalRpcPoller
+	for _, lrpc := range cfg.Wallet.LocalRPCs {
+		if lrpc.ChainKey == "" || lrpc.RPCURL == "" {
+			continue
+		}
+		lp := wallet.NewLocalRpcPoller(lrpc.ChainKey, lrpc.RPCURL, walletRepo, log)
+		localPollers = append(localPollers, lp)
+		log.Info("local rpc poller configured", zap.String("chain", lrpc.ChainKey), zap.String("rpc", lrpc.RPCURL))
+	}
+	walletSvc := wallet.NewWalletService(walletRepo, walletCache, openimCli, streamProviders, wsProviders, multiProviders, tronPoller, localPollers, log)
 	swapAggregator := quote.BuildAggregator(cfg.Swap, log)
 	bridgeProvider := bridge.BuildProvider(cfg.Bridge)
 	intentProvider := intent.BuildProvider(cfg.Intent)
@@ -101,6 +110,10 @@ func main() {
 
 	go tronPoller.Start(ctx)
 	go walletSvc.StartWSProviders(ctx)
+	for _, lp := range localPollers {
+		lp.SetOnTransfer(walletSvc.ProcessWebhookTransfer)
+	}
+	go walletSvc.StartLocalRpcPollers(ctx)
 
 	r := handler.NewRouter(log, jwtSvc,
 		handler.NewAccountHandler(accountSvc),

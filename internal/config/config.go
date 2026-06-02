@@ -63,6 +63,14 @@ func (c ProviderKeyConfig) TestKeys() []string {
 	return c.MainKeys()
 }
 
+// LocalRPCConfig describes a local/custom EVM RPC endpoint to poll for transactions.
+// Intended for local development chains (e.g. Anvil) that are not monitored by
+// Moralis or Alchemy stream providers.
+type LocalRPCConfig struct {
+	ChainKey string `mapstructure:"chain_key"`
+	RPCURL   string `mapstructure:"rpc_url"`
+}
+
 type WalletConfig struct {
 	TxProviders       map[string][]string   `mapstructure:"tx_providers"`
 	StreamProvider    string                `mapstructure:"stream_provider"`
@@ -78,6 +86,7 @@ type WalletConfig struct {
 	Chainstack        struct {
 		Endpoints map[string]string `mapstructure:"endpoints"`
 	} `mapstructure:"chainstack"`
+	LocalRPCs []LocalRPCConfig `mapstructure:"local_rpcs"`
 }
 
 // AlchemyConfig holds both tx-history keys and Notify (stream) credentials.
