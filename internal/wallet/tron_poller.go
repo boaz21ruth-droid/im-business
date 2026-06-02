@@ -119,11 +119,6 @@ func (p *TronPoller) pollOne(ctx context.Context, entry addressEntry) {
 			maxTS = ts
 		}
 
-		direction := "received"
-		if r.From == entry.address {
-			direction = "sent"
-		}
-
 		tx := recordToModel(r, entry.userID, entry.address)
 		if err := p.repo.InsertTx(tx); err != nil {
 			p.log.Error("insert tron tx", zap.Error(err))
@@ -132,22 +127,45 @@ func (p *TronPoller) pollOne(ctx context.Context, entry addressEntry) {
 
 		p.cache.InvalidateAddress(ctx, entry.chainKey, entry.address)
 
-		amount := formatAmount(r.Value, r.Decimals)
-		sym := ""
-		if r.TokenSymbol != nil {
-			sym = *r.TokenSymbol
+		// For received txs: check if sender is also an IM user and send a custom chat message.
+		// For sent txs: skip IM notification (the receiver's poll will send the chat message).
+		if r.From != entry.address {
+			// This is a received tx for entry.userID.
+			fromIDs, _ := p.repo.FindUsersByAddress(r.From)
+			if len(fromIDs) > 0 {
+				sym := ""
+				if r.TokenSymbol != nil {
+					sym = *r.TokenSymbol
+				}
+				payload := service.WalletTransferPayload{
+					Amount: formatAmount(r.Value, r.Decimals),
+					Symbol: sym,
+					Chain:  entry.chainKey,
+					Hash:   r.Hash,
+				}
+				if err := p.openim.SendWalletTransferMsg(fromIDs[0], entry.userID, payload); err != nil {
+					p.log.Warn("wallet transfer msg", zap.Error(err))
+				}
+			} else {
+				// Sender is not an IM user — fall back to system notification for receiver.
+				sym := ""
+				if r.TokenSymbol != nil {
+					sym = *r.TokenSymbol
+				}
+				notif := service.WalletTxNotification{
+					Type:      "wallet_tx",
+					Chain:     entry.chainKey,
+					Symbol:    sym,
+					Amount:    formatAmount(r.Value, r.Decimals),
+					Direction: "received",
+					Hash:      r.Hash,
+				}
+				if err := p.openim.SendWalletTxNotify(entry.userID, notif); err != nil {
+					p.log.Warn("openim notify failed", zap.Error(err))
+				}
+			}
 		}
-		notif := service.WalletTxNotification{
-			Type:      "wallet_tx",
-			Chain:     entry.chainKey,
-			Symbol:    sym,
-			Amount:    amount,
-			Direction: direction,
-			Hash:      r.Hash,
-		}
-		if err := p.openim.SendWalletTxNotify(entry.userID, notif); err != nil {
-			p.log.Warn("openim notify failed", zap.Error(err))
-		}
+		// If r.From == entry.address (sent tx), skip: the receiver's poll handles it.
 	}
 
 	if maxTS > cursor {

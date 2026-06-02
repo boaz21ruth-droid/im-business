@@ -121,6 +121,12 @@ func (s *WalletService) GetRegisteredAddresses(ctx context.Context, userID strin
 	return addresses, nil
 }
 
+// GetUserAddressByChain returns the chain address registered by any IM user.
+// Used by the friend-address lookup endpoint.
+func (s *WalletService) GetUserAddressByChain(ctx context.Context, userID, chainKey string) (string, error) {
+	return s.repo.FindAddressByUserChain(userID, chainKey)
+}
+
 func (s *WalletService) registerStreamAddressWithRetry(sp provider.StreamProvider, chainKey, address string) {
 	delays := []time.Duration{0, 2 * time.Second, 5 * time.Second, 15 * time.Second, 30 * time.Second}
 	for i, delay := range delays {
@@ -238,12 +244,29 @@ func (s *WalletService) GetHistory(ctx context.Context, userID, chainKey, contra
 
 // ProcessWebhookTransfer stores an incoming webhook transfer and notifies the affected user.
 func (s *WalletService) ProcessWebhookTransfer(ctx context.Context, chainKey string, t provider.WebhookTransfer) {
-	userIDs, err := s.repo.FindUsersByAddress(t.From)
-	if err == nil {
-		toIDs, _ := s.repo.FindUsersByAddress(t.To)
-		userIDs = append(userIDs, toIDs...)
+	fromIDs, _ := s.repo.FindUsersByAddress(t.From)
+	toIDs, _ := s.repo.FindUsersByAddress(t.To)
+
+	// If both sides are IM users, send one custom chat message (contentType=101)
+	// into the sender→receiver single chat. OpenIM makes it visible to both parties.
+	// Skip per-user system notifications in this case to avoid double-notifying.
+	sentCustomMsg := false
+	if len(fromIDs) > 0 && len(toIDs) > 0 {
+		sym := t.TokenSymbol
+		payload := service.WalletTransferPayload{
+			Amount: formatAmount(t.Value, t.Decimals),
+			Symbol: sym,
+			Chain:  chainKey,
+			Hash:   t.TxHash,
+		}
+		if err := s.openim.SendWalletTransferMsg(fromIDs[0], toIDs[0], payload); err != nil {
+			s.log.Warn("wallet transfer msg", zap.Error(err))
+		} else {
+			sentCustomMsg = true
+		}
 	}
 
+	userIDs := append(fromIDs, toIDs...)
 	seen := make(map[string]bool)
 	for _, userID := range userIDs {
 		if seen[userID] {
@@ -271,23 +294,25 @@ func (s *WalletService) ProcessWebhookTransfer(ctx context.Context, chainKey str
 		if err := s.repo.InsertTx(tx); err != nil {
 			s.log.Error("webhook insert tx", zap.Error(err))
 		}
-
 		s.cache.InvalidateAddress(ctx, chainKey, address)
 
-		direction := "received"
-		if t.From == address {
-			direction = "sent"
-		}
-		notif := service.WalletTxNotification{
-			Type:      "wallet_tx",
-			Chain:     chainKey,
-			Symbol:    sym,
-			Amount:    formatAmount(t.Value, t.Decimals),
-			Direction: direction,
-			Hash:      t.TxHash,
-		}
-		if err := s.openim.SendWalletTxNotify(userID, notif); err != nil {
-			s.log.Warn("openim notify", zap.Error(err))
+		// Fall back to legacy system notification only when custom msg was not sent.
+		if !sentCustomMsg {
+			direction := "received"
+			if t.From == address {
+				direction = "sent"
+			}
+			notif := service.WalletTxNotification{
+				Type:      "wallet_tx",
+				Chain:     chainKey,
+				Symbol:    sym,
+				Amount:    formatAmount(t.Value, t.Decimals),
+				Direction: direction,
+				Hash:      t.TxHash,
+			}
+			if err := s.openim.SendWalletTxNotify(userID, notif); err != nil {
+				s.log.Warn("openim notify", zap.Error(err))
+			}
 		}
 	}
 }

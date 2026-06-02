@@ -349,3 +349,22 @@ func (h *WalletHandler) GetTxHistory(c *gin.Context) {
 		"fromCache": fromCache,
 	})
 }
+
+// GetFriendAddress handles GET /wallet/friend/address.
+// Returns the on-chain address of any IM user for a given chain.
+// No friend-relationship check — the caller is sending funds to this person.
+func (h *WalletHandler) GetFriendAddress(c *gin.Context) {
+	friendID := c.Query("userID")
+	chainKey := c.Query("chainKey")
+	if friendID == "" || chainKey == "" {
+		resp.ErrBadRequest(c, "userID and chainKey are required")
+		return
+	}
+	address, err := h.svc.GetUserAddressByChain(c.Request.Context(), friendID, chainKey)
+	if err != nil {
+		// record not found or DB error → treat as "no wallet"
+		resp.OK(c, gin.H{"hasWallet": false, "address": ""})
+		return
+	}
+	resp.OK(c, gin.H{"hasWallet": true, "address": address})
+}

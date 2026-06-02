@@ -71,6 +71,7 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 	{
 		w.POST("/addresses", wal.RegisterAddresses)
 		w.GET("/addresses", wal.GetAddresses)
+		w.GET("/friend/address", wal.GetFriendAddress)
 		w.GET("/tx-history", wal.GetTxHistory)
 		w.GET("/swap_config", wal.GetSwapConfig)
 		w.GET("/price", wal.GetSwapPrice)
