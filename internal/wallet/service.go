@@ -121,6 +121,12 @@ func (s *WalletService) GetRegisteredAddresses(ctx context.Context, userID strin
 	return addresses, nil
 }
 
+// GetUserAddressByChain returns the chain address registered by any IM user.
+// Used by the friend-address lookup endpoint.
+func (s *WalletService) GetUserAddressByChain(ctx context.Context, userID, chainKey string) (string, error) {
+	return s.repo.FindAddressByUserChain(userID, chainKey)
+}
+
 func (s *WalletService) registerStreamAddressWithRetry(sp provider.StreamProvider, chainKey, address string) {
 	delays := []time.Duration{0, 2 * time.Second, 5 * time.Second, 15 * time.Second, 30 * time.Second}
 	for i, delay := range delays {
