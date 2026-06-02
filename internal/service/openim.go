@@ -99,6 +99,43 @@ type WalletTxNotification struct {
 	Hash      string `json:"hash"`
 }
 
+// WalletTransferPayload is the data field of a contentType=101 custom message
+// sent in the sender-receiver single chat when a wallet transfer is confirmed.
+type WalletTransferPayload struct {
+	Amount string `json:"amount"`
+	Symbol string `json:"symbol"`
+	Chain  string `json:"chain"`
+	Hash   string `json:"hash"`
+}
+
+// SendWalletTransferMsg posts a custom message (contentType=101, sessionType=1)
+// in the single chat between fromUserID and toUserID.
+// viewType=916 maps to CustomMessageType.walletTransfer in Flutter.
+// OpenIM single-chat messages are visible to both participants.
+func (c *OpenIMClient) SendWalletTransferMsg(fromUserID, toUserID string, p WalletTransferPayload) error {
+	data := map[string]any{
+		"viewType": 916,
+		"data":     p,
+	}
+	dataBytes, _ := json.Marshal(data)
+	tok, err := c.adminTok()
+	if err != nil {
+		return err
+	}
+	_, err = c.post("/msg/send_msg", map[string]any{
+		"sendID":      fromUserID,
+		"recvID":      toUserID,
+		"contentType": 101,
+		"sessionType": 1,
+		"content": map[string]any{
+			"data":        string(dataBytes),
+			"extension":   "",
+			"description": "转账通知",
+		},
+	}, tok)
+	return err
+}
+
 // SendWalletTxNotify delivers a wallet transaction notification to a user via OpenIM.
 func (c *OpenIMClient) SendWalletTxNotify(userID string, n WalletTxNotification) error {
 	content, _ := json.Marshal(n)
