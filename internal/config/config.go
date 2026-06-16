@@ -21,11 +21,17 @@ type Config struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	OpenIM   OpenIMConfig   `mapstructure:"openim"`
 	Wallet   WalletConfig   `mapstructure:"wallet"`
+	P2P      P2PConfig      `mapstructure:"p2p"`
 	Swap     SwapConfig     `mapstructure:"swap"`
 	Bridge   BridgeConfig   `mapstructure:"bridge"`
 	Intent   IntentConfig   `mapstructure:"intent"`
 	TOTP     TOTPConfig     `mapstructure:"totp"`
 	SMTP     *SmtpConfig    `mapstructure:"smtp"` // optional; nil = dev mode (mock code)
+}
+
+type P2PConfig struct {
+	ContractAddr  string `mapstructure:"contract_addr"`
+	ArbitratorKey string `mapstructure:"arbitrator_key"` // hex private key, no 0x
 }
 
 type TOTPConfig struct {

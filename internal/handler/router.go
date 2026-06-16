@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *UserHandler, wal *WalletHandler, wh *WebhookHandler, totp *TotpHandler) *gin.Engine {
+func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *UserHandler, wal *WalletHandler, wh *WebhookHandler, totp *TotpHandler, p2p *P2PHandler) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger(log))
@@ -85,6 +85,17 @@ func NewRouter(log *zap.Logger, jwt *jwtpkg.Service, acc *AccountHandler, user *
 	}
 
 	r.POST("/webhook/:provider", wh.HandleWebhook)
+
+	p := r.Group("/p2p")
+	{
+		p.GET("/orders", p2p.ListOrders)
+		p.GET("/orders/:id", p2p.GetOrder)
+		p.GET("/my/selling", auth, p2p.MySelling)
+		p.GET("/my/buying", auth, p2p.MyBuying)
+		// Admin endpoints (add IP whitelist middleware in production)
+		p.GET("/admin/disputes", auth, p2p.ListDisputed)
+		p.POST("/admin/resolve", auth, p2p.ResolveDispute)
+	}
 
 	return r
 }

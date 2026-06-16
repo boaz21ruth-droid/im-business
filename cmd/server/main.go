@@ -15,6 +15,7 @@ import (
 	"github.com/web1/im-business/internal/config"
 	"github.com/web1/im-business/internal/db"
 	"github.com/web1/im-business/internal/handler"
+	"github.com/web1/im-business/internal/p2p"
 	"github.com/web1/im-business/internal/repo"
 	"github.com/web1/im-business/internal/service"
 	"github.com/web1/im-business/internal/wallet"
@@ -115,12 +116,21 @@ func main() {
 	}
 	go walletSvc.StartLocalRpcPollers(ctx)
 
+	// P2P escrow
+	p2pRepo := repo.NewP2PRepo(gdb)
+	if cfg.P2P.ContractAddr != "" {
+		p2pListener := p2p.NewListener(cfg.P2P.ContractAddr, p2pRepo, log)
+		go p2pListener.Run(ctx)
+		log.Info("p2p listener started", zap.String("contract", cfg.P2P.ContractAddr))
+	}
+
 	r := handler.NewRouter(log, jwtSvc,
 		handler.NewAccountHandler(accountSvc),
 		handler.NewUserHandler(userSvc),
 		handler.NewWalletHandler(walletSvc, cfg.Swap, swapAggregator, bridgeProvider, intentProvider),
 		handler.NewWebhookHandler(walletSvc, streamProvidersMap),
 		handler.NewTotpHandler(totpSvc, userSvc),
+		handler.NewP2PHandler(p2pRepo, cfg.P2P.ContractAddr, cfg.P2P.ArbitratorKey, log),
 	)
 
 	srv := &http.Server{

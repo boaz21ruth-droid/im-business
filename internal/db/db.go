@@ -18,7 +18,7 @@ func NewPostgres(cfg config.PostgresConfig) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open postgres: %w", err)
 	}
-	if err := db.AutoMigrate(&model.User{}, &model.WalletAddress{}, &model.WalletTx{}, &model.WalletMoralisStream{}, &model.WalletStream{}); err != nil {
+	if err := db.AutoMigrate(&model.User{}, &model.WalletAddress{}, &model.WalletTx{}, &model.WalletMoralisStream{}, &model.WalletStream{}, &model.P2POrder{}); err != nil {
 		return nil, fmt.Errorf("auto-migrate: %w", err)
 	}
 	sqlDB, _ := db.DB()
